@@ -6,11 +6,12 @@ import { loadAllData } from "./modules/dataLoader.js";
 import {
   updateModeTabsUI,
   syncWorkspaceViewForMode,
+  updateContextToggleLabel,
   updateStatusChipText,
   updateControlSummaryChips,
   getLayoutOptions,
 } from "./modules/ui.js";
-import { openDetailsPanel, detailsContainer, renderTechniqueDetails } from "./modules/detailsPanel.js";
+import { openDetailsPanel, closeDetailsPanel, detailsContainer } from "./modules/detailsPanel.js";
 import {
   collectSearchSuggestions,
   renderSearchSuggestions,
@@ -28,8 +29,6 @@ import {
   renderWorkflowPhaseDetails,
   renderWorkflowTimeline,
   setWorkflowAnchor,
-  setThreatActorProfile,
-  clearThreatActorProfile,
 } from "./modules/workflowEngine.js";
 import {
   hydrateNodeMap,
@@ -39,8 +38,6 @@ import {
   setContextMode,
   setActiveMode,
   focusNodeById,
-  navigateBack,
-  navigateForward,
 } from "./modules/graphRenderer.js";
 
 // --- DOM References (for event listeners) ---
@@ -48,8 +45,10 @@ const searchInputEl = document.getElementById("search");
 const searchSuggestionsContainer = document.getElementById("searchSuggestions");
 const workflowPanel = document.getElementById("workflowPanel");
 const workflowTimeline = document.getElementById("workflowPhaseTimeline");
+const workflowBackToGraphButton = document.getElementById("workflowBackToGraph");
 const workflowTimelineToggleButton = document.getElementById("workflowTimelineToggle");
 const modeTabsContainer = document.getElementById("modeTabs");
+const contextToggleButton = document.getElementById("contextToggle");
 const domainFilterSelect = document.getElementById("domainFilter");
 const focusFilterSelect = document.getElementById("focusFilter");
 const phaseFilterSelect = document.getElementById("phaseFilter");
@@ -63,30 +62,13 @@ const showCampaignLinksToggle = document.getElementById("showCampaignLinksToggle
 const highlightNewEntitiesToggle = document.getElementById("highlightNewEntitiesToggle");
 const statusChip = document.getElementById("status");
 const focusModeSelect = document.getElementById("focusModeSelect");
-const detailModeSelect = document.getElementById("detailModeSelect");
-
-// Workflow sidebar controls
-const wfFullChainToggle = document.getElementById("wfFullChainToggle");
-const wfCardLimitSelect = document.getElementById("wfCardLimitSelect");
-const wfPhaseReachSelect = document.getElementById("wfPhaseReachSelect");
-const wfContextChipsToggle = document.getElementById("wfContextChipsToggle");
-const wfCardDetailSelect = document.getElementById("wfCardDetailSelect");
-const wfActorSelect = document.getElementById("wfActorSelect");
 const chipFilterSelects = [
-  focusModeSelect,
-  detailModeSelect,
   domainFilterSelect,
   focusFilterSelect,
   phaseFilterSelect,
   sortOrderSelect,
   layoutStrategySelect,
-  // Workflow sidebar controls
-  wfFullChainToggle,
-  wfCardLimitSelect,
-  wfPhaseReachSelect,
-  wfContextChipsToggle,
-  wfCardDetailSelect,
-].filter(Boolean);
+];
 const customChipSelects = [];
 
 enhanceFilterDropdowns();
@@ -181,22 +163,7 @@ loadAllData()
 
     buildWorkflowNeighborGraph({ groups, malware, campaigns });
 
-    // Populate actor select with groups (sorted alphabetically)
-    if (wfActorSelect) {
-      const sortedGroups = groups
-        .filter(g => g.stix_id && g.name)
-        .sort((a, b) => a.name.localeCompare(b.name));
-      sortedGroups.forEach(group => {
-        const option = document.createElement("option");
-        option.value = group.stix_id;
-        option.textContent = group.attack_id ? `${group.attack_id} ${group.name}` : group.name;
-        wfActorSelect.appendChild(option);
-      });
-      // Enhance the actor select now that it has its full option list
-      const actorControl = buildChipSelect(wfActorSelect);
-      if (actorControl) customChipSelects.push(actorControl);
-    }
-
+    updateContextToggleLabel();
     updateModeTabsUI();
     syncWorkspaceViewForMode();
 
@@ -299,73 +266,18 @@ function registerEventListeners() {
     resetViewButton.addEventListener("click", () => resetToDefaultView());
   }
 
-  // Navigation history buttons
-  const navBackBtn = document.getElementById("navBack");
-  const navFwdBtn  = document.getElementById("navForward");
-  if (navBackBtn) navBackBtn.addEventListener("click", () => navigateBack());
-  if (navFwdBtn)  navFwdBtn.addEventListener("click",  () => navigateForward());
+  // Workflow: back to graph
+  if (workflowBackToGraphButton) {
+    workflowBackToGraphButton.addEventListener("click", () => setActiveMode("attack"));
+  }
 
-  // Workflow: sidebar — full chain toggle
-  if (wfFullChainToggle) {
-    wfFullChainToggle.addEventListener("change", function () {
-      state.workflowTimelineExpanded = this.value === "full";
+  // Workflow: timeline toggle
+  if (workflowTimelineToggleButton) {
+    workflowTimelineToggleButton.addEventListener("click", () => {
+      state.workflowTimelineExpanded = !state.workflowTimelineExpanded;
       renderWorkflowTimeline();
     });
   }
-
-  // Workflow: sidebar — cards per phase
-  if (wfCardLimitSelect) {
-    wfCardLimitSelect.addEventListener("change", function () {
-      state.workflowCardLimit = Number(this.value) || 5;
-      renderWorkflowView();
-    });
-  }
-
-  // Workflow: sidebar — phase reach
-  if (wfPhaseReachSelect) {
-    wfPhaseReachSelect.addEventListener("change", function () {
-      state.workflowPhaseReach = Number(this.value) || 4;
-      // Phase reach affects the neighbor graph — rebuild and re-render
-      import("./modules/workflowEngine.js").then(({ buildWorkflowNeighborGraph, renderWorkflowView: rwv }) => {
-        const groups = Object.values(state.entityData.group || {});
-        const malware = Object.values(state.entityData.malware || {});
-        const campaigns = Object.values(state.entityData.campaign || {});
-        buildWorkflowNeighborGraph({ groups, malware, campaigns });
-        rwv();
-      });
-    });
-  }
-
-  // Workflow: sidebar — context chips visibility
-  if (wfContextChipsToggle) {
-    wfContextChipsToggle.addEventListener("change", function () {
-      state.workflowShowContextChips = this.value === "on";
-      renderWorkflowView();
-    });
-  }
-
-  // Workflow: sidebar — card detail level
-  if (wfCardDetailSelect) {
-    wfCardDetailSelect.addEventListener("change", function () {
-      state.workflowCardDetail = this.value || "standard";
-      renderWorkflowView();
-    });
-  }
-
-  // Workflow: sidebar — threat actor profile
-  if (wfActorSelect) {
-    wfActorSelect.addEventListener("change", function () {
-      const groupId = this.value;
-      if (groupId) {
-        setThreatActorProfile(groupId);
-      } else {
-        clearThreatActorProfile();
-      }
-    });
-  }
-
-  // Workflow: timeline toggle button (on main board — keep for keyboard users)
-  // Note: the sidebar wfFullChainToggle is the primary control now
 
   // Workflow: timeline phase click
   if (workflowTimeline) {
@@ -373,9 +285,7 @@ function registerEventListeners() {
       if (!target) return;
       const phaseIndex = Number(target.getAttribute("data-phase-index"));
       if (!Number.isFinite(phaseIndex)) return;
-      // In actor mode workflowPhaseColumns is empty — allow any rendered phase
-      const isActorMode = Boolean(state.activeActorId);
-      if (!isActorMode && !state.workflowPhaseColumns.has(phaseIndex)) return;
+      if (!state.workflowPhaseColumns.has(phaseIndex)) return;
       state.activeWorkflowPhaseIndex = phaseIndex;
       renderWorkflowTimeline();
       renderWorkflowPhaseDetails();
@@ -408,32 +318,6 @@ function registerEventListeners() {
           setActiveMode("attack");
           focusNodeById(nodeId);
         }
-        return;
-      }
-      const detailsButton = event.target.closest("[data-show-details-id]");
-      if (detailsButton) {
-        const nodeId = detailsButton.getAttribute("data-show-details-id");
-        if (nodeId && state.techniqueMap[nodeId]) {
-          renderTechniqueDetails(state.techniqueMap[nodeId], nodeId);
-          openDetailsPanel();
-        }
-        return;
-      }
-      const clearActorButton = event.target.closest("[data-clear-actor-profile]");
-      if (clearActorButton) {
-        clearThreatActorProfile();
-        return;
-      }
-      const recentAnchorChip = event.target.closest("[data-recent-anchor-id]");
-      if (recentAnchorChip) {
-        const techId = recentAnchorChip.getAttribute("data-recent-anchor-id");
-        if (techId) setWorkflowAnchor(techId);
-        return;
-      }
-      const actorChip = event.target.closest("[data-actor-profile-id]");
-      if (actorChip) {
-        const groupId = actorChip.getAttribute("data-actor-profile-id");
-        if (groupId) setThreatActorProfile(groupId);
       }
     });
   }
@@ -445,6 +329,19 @@ function registerEventListeners() {
       if (!tab) return;
       const mode = tab.getAttribute("data-mode");
       if (mode) setActiveMode(mode);
+    });
+  }
+
+  // Context toggle
+  if (contextToggleButton) {
+    contextToggleButton.addEventListener("click", function () {
+      if (state.activeMode === "workflow") return;
+      const nextState = !state.useContextEntities;
+      if (!nextState && state.activeMode !== "attack") {
+        setActiveMode("attack");
+        return;
+      }
+      setContextMode(nextState);
     });
   }
 
@@ -492,15 +389,12 @@ function registerEventListeners() {
 
   if (focusModeSelect) {
     focusModeSelect.addEventListener("change", function () {
-      const value = this.value || "attack";
+      const value = this.value;
+      if (!value) {
+        if (state.activeMode !== "workflow") setActiveMode("attack");
+        return;
+      }
       setActiveMode(value);
-    });
-  }
-
-  if (detailModeSelect) {
-    detailModeSelect.addEventListener("change", function () {
-      const nextContext = this.value === "advanced";
-      setContextMode(nextContext);
     });
   }
 
@@ -602,9 +496,6 @@ function buildChipSelect(select) {
   const chipField = select.closest(".chip-field");
   if (!chipField) return null;
 
-  // Small option sets become inline chip radio groups
-  if (select.options.length < 4) return buildChipRadio(select, chipField);
-
   chipField.classList.add("chip-field--enhanced");
   select.dataset.enhanced = "true";
 
@@ -688,63 +579,5 @@ function buildChipSelect(select) {
       wrapper.classList.remove("is-open");
       trigger.setAttribute("aria-expanded", "false");
     },
-  };
-}
-
-function buildChipRadio(select, chipField) {
-  chipField.classList.add("chip-field--radio");
-  select.dataset.enhanced = "true";
-
-  // Move the select out of the way but keep it functional
-  select.classList.add("chip-select-native");
-  select.setAttribute("aria-hidden", "true");
-  select.tabIndex = -1;
-
-  const group = document.createElement("div");
-  group.className = "chip-radio-group";
-  group.setAttribute("role", "radiogroup");
-
-  const syncButtons = () => {
-    group.querySelectorAll(".chip-radio-btn").forEach(btn => {
-      const active = btn.dataset.value === select.value;
-      btn.classList.toggle("is-active", active);
-      btn.setAttribute("aria-checked", active ? "true" : "false");
-    });
-  };
-
-  // Build one button per option
-  Array.from(select.options).forEach(option => {
-    const btn = document.createElement("button");
-    btn.type = "button";
-    btn.className = "chip-radio-btn";
-    btn.dataset.value = option.value;
-    btn.textContent = option.textContent.trim();
-    btn.setAttribute("role", "radio");
-    btn.setAttribute("aria-checked", option.selected ? "true" : "false");
-    if (option.selected) btn.classList.add("is-active");
-    group.appendChild(btn);
-  });
-
-  // Append group inside chipField (after the label span)
-  chipField.appendChild(group);
-
-  group.addEventListener("click", event => {
-    const btn = event.target.closest(".chip-radio-btn");
-    if (!btn) return;
-    const value = btn.dataset.value;
-    if (value !== undefined && select.value !== value) {
-      select.value = value;
-      select.dispatchEvent(new Event("change", { bubbles: true }));
-    }
-    syncButtons();
-  });
-
-  // Keep in sync when value is set programmatically
-  select.addEventListener("change", syncButtons);
-
-  // chip radios are always visible — no open/close concept
-  return {
-    wrapper: group,
-    close() {},
   };
 }

@@ -9,6 +9,7 @@ const themeToggleButton = document.getElementById("themeToggle");
 const themeToggleText = themeToggleButton
   ? themeToggleButton.querySelector(".theme-toggle-text")
   : null;
+const contextToggleButton = document.getElementById("contextToggle");
 const modeTabsContainer = document.getElementById("modeTabs");
 const domainFilterSelect = document.getElementById("domainFilter");
 const focusFilterSelect = document.getElementById("focusFilter");
@@ -20,18 +21,11 @@ export const statusChip = document.getElementById("status");
 const legendToggleButton = document.getElementById("legendToggle");
 const legendContainer = document.getElementById("graphLegend");
 const focusModeSelect = document.getElementById("focusModeSelect");
-const detailModeSelect = document.getElementById("detailModeSelect");
 const legendCloseButton = document.getElementById("legendClose");
 export const workflowPanel = document.getElementById("workflowPanel");
 export const graphContainer = document.getElementById("cy");
 const legendWrapper = document.querySelector(".legend-wrapper");
 const canvasCard = document.querySelector(".canvas-card");
-const searchControls = document.getElementById("canvasSearchControls");
-const workflowSearchMount = document.getElementById("workflowSearchMount");
-const graphSearchMount = document.getElementById("graphSearchMount");
-const graphViewControlSection = document.getElementById("graphViewControlSection");
-const graphFiltersSection = document.getElementById("graphFiltersSection");
-const workflowControlsSection = document.getElementById("workflowControlsSection");
 
 // --- Pure Helpers ---
 
@@ -85,37 +79,26 @@ export function updateModeTabsUI() {
   });
 
   if (focusModeSelect) {
-    const focusModes = ["attack", "techniques", "groups", "malware", "campaigns", "procedures"];
-    const fallbackMode = "attack";
-    const resolvedMode = focusModes.includes(state.activeMode) ? state.activeMode : fallbackMode;
-    focusModeSelect.value = resolvedMode;
+    const contextModes = ["groups", "malware", "campaigns", "procedures"];
+    focusModeSelect.value = contextModes.includes(state.activeMode) ? state.activeMode : "";
   }
 
-  if (detailModeSelect) {
-    detailModeSelect.value = state.useContextEntities ? "advanced" : "basic";
-    detailModeSelect.disabled = state.activeMode === "workflow";
-    detailModeSelect.parentElement?.classList.toggle("is-disabled", state.activeMode === "workflow");
-  }
-
-  const isWorkflow = state.activeMode === "workflow";
-
-  // Show/hide sidebar sections based on mode
-  if (graphViewControlSection) graphViewControlSection.classList.toggle("is-hidden", isWorkflow);
-  if (graphFiltersSection) graphFiltersSection.classList.toggle("is-hidden", isWorkflow);
-  if (workflowControlsSection) workflowControlsSection.classList.toggle("is-hidden", !isWorkflow);
-
-  // Disable graph-only controls when in workflow mode (belt-and-suspenders)
+  const filtersDisabled = state.activeMode === "workflow";
   const toggleFilterState = selectEl => {
     if (!selectEl) return;
-    selectEl.disabled = isWorkflow;
-    selectEl.parentElement?.classList.toggle("is-disabled", isWorkflow);
+    selectEl.disabled = filtersDisabled;
+    selectEl.parentElement?.classList.toggle("is-disabled", filtersDisabled);
   };
-  toggleFilterState(detailModeSelect);
   toggleFilterState(domainFilterSelect);
   toggleFilterState(focusFilterSelect);
   toggleFilterState(phaseFilterSelect);
   toggleFilterState(sortOrderSelect);
 
+  if (contextToggleButton) {
+    const disable = state.activeMode === "workflow";
+    contextToggleButton.disabled = disable;
+    contextToggleButton.setAttribute("aria-disabled", disable ? "true" : "false");
+  }
   updateControlSummaryChips();
 }
 
@@ -124,21 +107,20 @@ export function syncWorkspaceViewForMode() {
   if (workflowPanel) workflowPanel.classList.toggle("is-hidden", !workflowActive);
   if (graphContainer) graphContainer.classList.toggle("is-hidden", workflowActive);
   if (legendWrapper) legendWrapper.classList.toggle("is-hidden", workflowActive);
-  if (canvasCard) {
-    canvasCard.classList.toggle("graph-only", !workflowActive);
-    canvasCard.classList.toggle("workflow-expanded", workflowActive);
-  }
-  if (searchControls && workflowSearchMount && graphSearchMount) {
-    const target = workflowActive ? workflowSearchMount : graphSearchMount;
-    if (!target.contains(searchControls)) {
-      target.appendChild(searchControls);
-    }
-  }
+  if (canvasCard) canvasCard.classList.toggle("graph-only", !workflowActive);
   if (!workflowActive && state.cy) {
     requestAnimationFrame(() => {
       state.cy.resize();
     });
   }
+}
+
+export function updateContextToggleLabel() {
+  if (!contextToggleButton) return;
+  contextToggleButton.disabled = false;
+  contextToggleButton.textContent = `Context: ${state.useContextEntities ? "On" : "Off"}`;
+  contextToggleButton.setAttribute("aria-pressed", state.useContextEntities ? "true" : "false");
+  updateControlSummaryChips();
 }
 
 export function getLayoutOptions(overrides = {}) {
@@ -258,3 +240,9 @@ function initLegend() {
 updateControlSummaryChips();
 initTheme();
 initLegend();
+
+if (contextToggleButton) {
+  contextToggleButton.disabled = true;
+  contextToggleButton.setAttribute("aria-pressed", "false");
+  contextToggleButton.setAttribute("aria-label", "Toggle contextual nodes");
+}

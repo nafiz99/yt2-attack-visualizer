@@ -1,9 +1,7 @@
 {
   "permissions": {
     "allow": [
-      "mcp__Claude_Preview__preview_start",
-      "Bash(node --input-type=module)",
-      "WebFetch(domain:github.com)"
+      "mcp__Claude_Preview__preview_start"
     ]
   }
 }
