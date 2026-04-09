@@ -5,7 +5,6 @@ import {
   state,
   WORKFLOW_TACTIC_SEQUENCE,
   WORKFLOW_PHASE_LOOKUP,
-  WORKFLOW_COLUMN_CARD_LIMIT,
 } from "./state.js";
 import { setIconButtonLabel, updateStatusChipText } from "./ui.js";
 import { getTacticsForTechnique } from "./graphQueries.js";
@@ -22,6 +21,9 @@ import {
 // setActiveMode is imported from graphRenderer — circular but safe (only called inside functions)
 import { setActiveMode } from "./graphRenderer.js";
 
+const RECENT_ANCHORS_KEY = "yt2_recent_anchors";
+const RECENT_ANCHORS_MAX = 8;
+
 // --- DOM References ---
 const workflowPanel = document.getElementById("workflowPanel");
 const workflowTimeline = document.getElementById("workflowPhaseTimeline");
@@ -30,6 +32,43 @@ const workflowAnchorDetails = document.getElementById("workflowAnchorDetails");
 const workflowEmptyState = document.getElementById("workflowEmptyState");
 const workflowPhasePlaceholder = document.getElementById("workflowPhasePlaceholder");
 const workflowTimelineToggleButton = document.getElementById("workflowTimelineToggle");
+
+// --- Recent Anchors ---
+
+function loadRecentAnchors() {
+  try { return JSON.parse(localStorage.getItem(RECENT_ANCHORS_KEY) || "[]"); }
+  catch { return []; }
+}
+
+function saveRecentAnchor(techId) {
+  const technique = state.techniqueMap[techId];
+  if (!technique) return;
+  const prev = loadRecentAnchors().filter(a => a.techId !== techId);
+  const next = [{ techId, name: technique.name, attack_id: technique.attack_id || "" }, ...prev]
+    .slice(0, RECENT_ANCHORS_MAX);
+  try { localStorage.setItem(RECENT_ANCHORS_KEY, JSON.stringify(next)); } catch {}
+  renderRecentAnchors();
+}
+
+export function renderRecentAnchors() {
+  const container = document.getElementById("recentAnchorsList");
+  const section = document.getElementById("recentAnchorsSection");
+  if (!container) return;
+  const anchors = loadRecentAnchors();
+  if (!anchors.length) {
+    section?.classList.add("is-hidden");
+    return;
+  }
+  section?.classList.remove("is-hidden");
+  container.innerHTML = anchors.map(a => `
+    <button class="recent-anchor-chip" type="button"
+            data-recent-anchor-id="${a.techId}"
+            title="${a.name}">
+      <span class="recent-id">${a.attack_id}</span>
+      <span class="recent-name">${a.name}</span>
+    </button>
+  `).join("");
+}
 
 // --- Tactic Metadata Hydration ---
 
@@ -200,7 +239,8 @@ function processEntityWorkflow(record, entityType) {
         registerParallelWorkflowLink(current.techId, next.techId, entityType, record);
         continue;
       }
-      if (delta > 0 && delta <= 4) {
+      const reach = state.workflowPhaseReach || 4;
+      if (delta > 0 && delta <= reach) {
         const directionalKey = `${current.techId}->${next.techId}`;
         if (seenDirectional.has(directionalKey)) continue;
         seenDirectional.add(directionalKey);
@@ -266,6 +306,15 @@ export function setWorkflowAnchor(techId, options = {}) {
   state.activeWorkflowTechniqueId = techId;
   state.activeWorkflowPhaseIndex = null;
   state.workflowTimelineExpanded = false;
+  state.activeActorId = null;
+  state.actorPhaseMap = {};
+  saveRecentAnchor(techId);
+  // Sync actor select back to empty
+  const actorSel = document.getElementById("wfActorSelect");
+  if (actorSel && actorSel.value !== "") {
+    actorSel.value = "";
+    actorSel.dispatchEvent(new Event("change", { bubbles: true }));
+  }
   if (options.updateSearchInput !== false) {
     const searchInput = document.getElementById("search");
     if (searchInput) {
@@ -283,6 +332,11 @@ export function setWorkflowAnchor(techId, options = {}) {
 
 export function renderWorkflowTimeline(activePhases) {
   if (!workflowTimeline) return;
+  // In actor mode, use the actor-specific timeline renderer
+  if (state.activeActorId) {
+    _renderActorTimeline(state.actorPhaseMap);
+    return;
+  }
   if (activePhases !== undefined) state.workflowTimelineHighlights = activePhases || [];
   const activeSet = new Set(state.workflowTimelineHighlights.map(phase => phase.shortname));
   const hasHighlights = activeSet.size > 0;
@@ -299,17 +353,14 @@ export function renderWorkflowTimeline(activePhases) {
       const classes = ["timeline-phase"];
       if (isActive) classes.push("is-active");
       if (isSelected) classes.push("is-selected");
-      const arrow =
-        index < phasesToRender.length - 1
-          ? `<div class="timeline-arrow" aria-hidden="true">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M5 12h14"></path>
-                <path d="m13 6 6 6-6 6"></path>
-              </svg>
-            </div>`
-          : "";
       const rawIndex = Number.isFinite(phase.index) ? phase.index + 1 : index + 1;
       const number = String(rawIndex).padStart(2, "0");
+      const arrow =
+        index < phasesToRender.length - 1
+          ? `<span class="timeline-arrow" aria-hidden="true">
+              <span class="material-symbols-rounded">arrow_forward</span>
+            </span>`
+          : "";
       return `
         <div class="timeline-item">
           <div
@@ -322,26 +373,22 @@ export function renderWorkflowTimeline(activePhases) {
             <span class="timeline-phase-number">Phase ${number}</span>
             <span class="timeline-phase-label">${phase.label}</span>
           </div>
-          ${arrow}
         </div>
+        ${arrow}
       `;
     })
     .join("");
   workflowTimeline.innerHTML = markup;
 
-  if (workflowTimelineToggleButton) {
-    const hiddenCount = Math.max(WORKFLOW_TACTIC_SEQUENCE.length - phasesToRender.length, 0);
-    workflowTimelineToggleButton.classList.toggle("is-hidden", !hasHighlights);
-    workflowTimelineToggleButton.setAttribute(
-      "aria-pressed",
-      state.workflowTimelineExpanded ? "true" : "false"
-    );
-    const toggleLabel = state.workflowTimelineExpanded
-      ? "Collapse to Anchored Phases"
-      : hiddenCount > 0
-      ? `Show Full Chain (${hiddenCount} hidden)`
-      : "Show Full Chain";
-    setIconButtonLabel(workflowTimelineToggleButton, toggleLabel);
+  // Sync sidebar wfFullChainToggle select to match state
+  const wfFullChainToggle = document.getElementById("wfFullChainToggle");
+  if (wfFullChainToggle) {
+    const nextVal = state.workflowTimelineExpanded ? "full" : "anchored";
+    if (wfFullChainToggle.value !== nextVal) {
+      wfFullChainToggle.value = nextVal;
+      // Notify the custom chip-select wrapper to re-sync its trigger label
+      wfFullChainToggle.dispatchEvent(new Event("change", { bubbles: true }));
+    }
   }
 }
 
@@ -349,9 +396,6 @@ function setTimelineVisibility(visible) {
   if (workflowTimeline) {
     if (!visible) workflowTimeline.innerHTML = "";
     workflowTimeline.classList.toggle("is-hidden", !visible);
-  }
-  if (workflowTimelineToggleButton) {
-    workflowTimelineToggleButton.classList.toggle("is-hidden", !visible);
   }
 }
 
@@ -363,11 +407,19 @@ export function renderWorkflowView() {
   workflowPanel.classList.toggle("is-hidden", !workflowActive);
   if (!workflowActive) return;
 
+  // Actor profile mode takes over the entire view
+  if (state.activeActorId) {
+    _renderActorProfileView();
+    return;
+  }
+
   const anchorId = state.activeWorkflowTechniqueId;
   const anchorTechnique = anchorId ? state.techniqueMap[anchorId] : null;
   const anchorEntry = anchorId ? ensureWorkflowTechnique(anchorId) : null;
   const highlightedPhases = anchorEntry && anchorEntry.phases ? anchorEntry.phases : [];
   setTimelineVisibility(Boolean(anchorTechnique));
+
+  renderRecentAnchors();
 
   if (!anchorTechnique) {
     closeDetailsPanel();
@@ -405,6 +457,11 @@ export function renderWorkflowView() {
 
 export function renderWorkflowPhaseDetails() {
   if (!workflowPhaseList) return;
+  if (state.activeActorId) {
+    _renderActorPhaseDetails(state.actorPhaseMap);
+    _renderActorTimeline(state.actorPhaseMap);
+    return;
+  }
   const hasColumns = state.workflowPhaseColumns && state.workflowPhaseColumns.size;
   const hasSelection =
     Number.isFinite(state.activeWorkflowPhaseIndex) &&
@@ -469,7 +526,7 @@ export function buildWorkflowPhaseModel(anchorId, anchorEntry) {
       column.anchorTechniques.push(createTechniqueWorkflowModel(anchorId, "anchor"));
       column.parallels = neighbors.parallels
         .filter(item => item.phaseInfo.phases.some(p => p.index === idx))
-        .slice(0, WORKFLOW_COLUMN_CARD_LIMIT)
+        .slice(0, state.workflowCardLimit)
         .map(item => createTechniqueWorkflowModel(item.techId, "parallel", item.bucket))
         .filter(Boolean);
     }
@@ -477,7 +534,7 @@ export function buildWorkflowPhaseModel(anchorId, anchorEntry) {
     if (state_ === "before") {
       column.preceding = neighbors.predecessors
         .filter(item => item.phaseInfo.phases.some(p => p.index === idx))
-        .slice(0, WORKFLOW_COLUMN_CARD_LIMIT)
+        .slice(0, state.workflowCardLimit)
         .map(item => createTechniqueWorkflowModel(item.techId, "preceding", item.bucket))
         .filter(Boolean);
     }
@@ -485,7 +542,7 @@ export function buildWorkflowPhaseModel(anchorId, anchorEntry) {
     if (state_ === "after") {
       column.succeeding = neighbors.successors
         .filter(item => item.phaseInfo.phases.some(p => p.index === idx))
-        .slice(0, WORKFLOW_COLUMN_CARD_LIMIT)
+        .slice(0, state.workflowCardLimit)
         .map(item => createTechniqueWorkflowModel(item.techId, "succeeding", item.bucket))
         .filter(Boolean);
     }
@@ -524,7 +581,7 @@ function buildFallbackTechniques(phaseShortname, options = {}) {
   return pool
     .filter(id => !exclude.has(id))
     .sort((a, b) => _getUsageScore(b) - _getUsageScore(a))
-    .slice(0, WORKFLOW_COLUMN_CARD_LIMIT)
+    .slice(0, state.workflowCardLimit)
     .map(id => createTechniqueWorkflowModel(id, "reference"))
     .filter(Boolean);
 }
@@ -544,21 +601,20 @@ function buildWorkflowAnchorCard(technique) {
   const phaseInfo = getTechniquePhaseInfo(technique.stix_id);
   const phaseLabels = phaseInfo.phases.length
     ? phaseInfo.phases.map(phase => phase.label).join(", ")
-    : "Not mapped to ATT&CK phases";
+    : "Phase not mapped";
   const contextSummary = summarizeContextCounts(getTechniqueContextCounts(technique.stix_id));
   return `
     <div class="workflow-anchor-card">
-      <small>Anchored Technique</small>
-      <h3>${technique.attack_id || "NO-ID"} · ${technique.name}</h3>
+      <small>Anchor</small>
+      <h3>${technique.name}<span style="font-family:var(--font-mono);font-weight:400;font-size:12px;color:var(--text-muted);margin-left:10px;">${technique.attack_id || ""}</span></h3>
       <div class="workflow-anchor-meta">
         <span>${phaseLabels}</span>
-        <span>${contextSummary}</span>
+        ${contextSummary ? `<span style="color:var(--text-muted)">·</span><span>${contextSummary}</span>` : ""}
       </div>
       ${buildWorkflowContextChips(technique.stix_id)}
       <div class="workflow-card-actions">
-        <button type="button" class="ghost-btn" data-focus-node-id="${technique.stix_id}">
-          Show in Graph
-        </button>
+        <button type="button" class="primary-btn" data-show-details-id="${technique.stix_id}">Show Details</button>
+        <button type="button" class="ghost-btn" data-focus-node-id="${technique.stix_id}">Show in Graph</button>
       </div>
     </div>
   `;
@@ -566,46 +622,58 @@ function buildWorkflowAnchorCard(technique) {
 
 function renderWorkflowPhaseColumn(column) {
   if (!column || !column.phase) return "";
-  const sections = [];
+  const mainSections = [];
+  let parallelSection = "";
   if (column.anchorTechniques.length) {
-    sections.push(buildWorkflowSection("Anchored Technique", column.anchorTechniques));
+    mainSections.push(buildWorkflowSection("Anchored Technique", column.anchorTechniques));
   }
   if (column.preceding.length) {
-    sections.push(buildWorkflowSection("Likely preceding steps", column.preceding));
+    mainSections.push(buildWorkflowSection("Likely preceding steps", column.preceding));
   } else if (column.state === "before") {
-    sections.push(buildPhaseEmptyState("No strong upstream techniques detected in this phase."));
+    mainSections.push(buildPhaseEmptyState("No strong upstream techniques detected in this phase."));
   }
   if (column.parallels.length) {
-    sections.push(buildWorkflowSection("Parallel options", column.parallels));
+    parallelSection = buildWorkflowSection("Parallel options", column.parallels, "parallel");
   }
   if (column.succeeding.length) {
-    sections.push(buildWorkflowSection("Likely downstream steps", column.succeeding));
+    mainSections.push(buildWorkflowSection("Likely downstream steps", column.succeeding));
   } else if (column.state === "after" && !column.anchorTechniques.length) {
-    sections.push(buildPhaseEmptyState("No downstream links surfaced yet."));
+    mainSections.push(buildPhaseEmptyState("No downstream links surfaced yet."));
   }
   if (column.fallback.length) {
-    sections.push(buildWorkflowSection("Common ATT&CK techniques", column.fallback));
+    mainSections.push(buildWorkflowSection("Common ATT&CK techniques", column.fallback));
   }
-  const body = sections.length
-    ? sections.join("")
+  const mainBody = mainSections.length
+    ? mainSections.join("")
     : buildPhaseEmptyState("No signals available for this phase.");
+  const stateLabel = column.state === "anchor" ? "Anchor" : column.state === "before" ? "Upstream" : "Downstream";
   return `
     <div class="workflow-phase-column" data-phase-state="${column.state}">
       <div class="workflow-phase-header">
-        <p class="phase-metadata">Phase ${column.phase.index + 1}</p>
+        <p class="phase-metadata">${stateLabel} · Phase ${column.phase.index + 1}</p>
         <h4>${column.phase.label}</h4>
       </div>
-      <div class="workflow-phase-body">${body}</div>
+      <div class="workflow-phase-body">
+        <div class="workflow-phase-main">${mainBody}</div>
+        ${parallelSection ? `<div class="workflow-phase-side">${parallelSection}</div>` : ""}
+      </div>
     </div>
   `;
 }
 
-function buildWorkflowSection(title, techniques) {
+function buildWorkflowSection(title, techniques, variant = "default") {
   if (!techniques || !techniques.length) return "";
+  const sectionClasses = ["workflow-phase-section"];
+  if (variant === "parallel") sectionClasses.push("workflow-phase-section--parallel");
+  const content =
+    variant === "parallel"
+      ? `<div class="workflow-parallel-grid">${techniques.map(renderWorkflowTechniqueCard).join("")}</div>`
+      : techniques.map(renderWorkflowTechniqueCard).join("");
+  const count = techniques.length;
   return `
-    <div class="workflow-phase-section">
-      <p class="phase-section-title">${title}</p>
-      ${techniques.map(renderWorkflowTechniqueCard).join("")}
+    <div class="${sectionClasses.join(" ")}">
+      <p class="phase-section-title">${title}<span style="margin-left:8px;opacity:0.5;font-weight:400;">${count}</span></p>
+      ${content}
     </div>
   `;
 }
@@ -617,29 +685,191 @@ function buildPhaseEmptyState(copy) {
 function renderWorkflowTechniqueCard(model) {
   if (!model || !model.technique) return "";
   const technique = model.technique;
-  const entitySummary = summarizeEntitySupport(model.entities || {});
-  const metaParts = [];
-  if (model.weight) {
-    metaParts.push(
-      `<span class="workflow-card-weight">${model.weight} signal${model.weight > 1 ? "s" : ""}</span>`
-    );
-  }
-  if (entitySummary) metaParts.push(`<span>${entitySummary}</span>`);
-  const metaMarkup = metaParts.length
-    ? `<div class="workflow-card-meta">${metaParts.join("")}</div>`
+  const isCompact = state.workflowCardDetail === "compact";
+
+  const contextChips = state.workflowShowContextChips
+    ? buildWorkflowContextChips(model.techId)
     : "";
+
+  let metaMarkup = "";
+  if (!isCompact) {
+    const entitySummary = summarizeEntitySupport(model.entities || {});
+    const metaParts = [];
+    if (model.weight) metaParts.push(`<span class="workflow-card-weight">${model.weight}×</span>`);
+    if (entitySummary) metaParts.push(`<span>${entitySummary}</span>`);
+    if (metaParts.length) metaMarkup = `<div class="workflow-card-meta">${metaParts.join("")}</div>`;
+  }
+
+  const actions = isCompact
+    ? `<div class="workflow-card-actions">
+        <button type="button" class="primary-btn" data-tech-anchor-id="${model.techId}">Anchor</button>
+       </div>`
+    : `<div class="workflow-card-actions">
+        <button type="button" class="primary-btn" data-tech-anchor-id="${model.techId}">Anchor</button>
+        <button type="button" class="ghost-btn" data-focus-node-id="${model.techId}">Graph</button>
+       </div>`;
+
   return `
-    <article class="workflow-tech-card" data-tech-id="${model.techId}">
+    <article class="workflow-tech-card${isCompact ? " workflow-tech-card--compact" : ""}" data-tech-id="${model.techId}">
       <header>
         <h5>${technique.name}</h5>
-        <span class="attack-id">${technique.attack_id || "NO-ID"}</span>
+        <span class="attack-id">${technique.attack_id || ""}</span>
       </header>
-      ${buildWorkflowContextChips(model.techId)}
+      ${contextChips}
       ${metaMarkup}
-      <div class="workflow-card-actions">
-        <button type="button" class="primary-btn" data-tech-anchor-id="${model.techId}">Explore Branch</button>
-        <button type="button" class="ghost-btn" data-focus-node-id="${model.techId}">Show in Graph</button>
-      </div>
+      ${actions}
     </article>
+  `;
+}
+
+// --- Threat Actor Kill Chain Profile ---
+
+export function setThreatActorProfile(groupId) {
+  if (!groupId) {
+    clearThreatActorProfile();
+    return;
+  }
+  const group = state.entityData.group[groupId];
+  if (!group) return;
+
+  state.activeActorId = groupId;
+  state.activeWorkflowTechniqueId = null;
+  state.activeWorkflowPhaseIndex = null;
+
+  // Build { shortname: [techId, ...] } map
+  const phaseMap = {};
+  (group.techniques || []).forEach(tech => {
+    if (!tech.stix_id) return;
+    const phaseInfo = getTechniquePhaseInfo(tech.stix_id);
+    phaseInfo.phases.forEach(phase => {
+      if (!phaseMap[phase.shortname]) phaseMap[phase.shortname] = [];
+      if (!phaseMap[phase.shortname].includes(tech.stix_id))
+        phaseMap[phase.shortname].push(tech.stix_id);
+    });
+  });
+  state.actorPhaseMap = phaseMap;
+
+  // Clear search input
+  const searchInput = document.getElementById("search");
+  if (searchInput) searchInput.value = "";
+
+  renderWorkflowView();
+  updateStatusChipText(`Actor profile: ${group.name} · ${(group.techniques || []).length} techniques`);
+}
+
+export function clearThreatActorProfile() {
+  state.activeActorId = null;
+  state.actorPhaseMap = {};
+  const actorSel = document.getElementById("wfActorSelect");
+  if (actorSel && actorSel.value !== "") {
+    actorSel.value = "";
+    actorSel.dispatchEvent(new Event("change", { bubbles: true }));
+  }
+  renderWorkflowView();
+}
+
+function _renderActorProfileView() {
+  if (!workflowPanel) return;
+  workflowPanel.classList.remove("is-hidden");
+  const group = state.entityData.group[state.activeActorId];
+  if (!group) return;
+
+  if (workflowEmptyState) workflowEmptyState.classList.add("is-hidden");
+  setTimelineVisibility(true);
+
+  if (workflowAnchorDetails) {
+    workflowAnchorDetails.innerHTML = _buildActorAnchorCard(group, state.actorPhaseMap);
+  }
+
+  _renderActorTimeline(state.actorPhaseMap);
+  _renderActorPhaseDetails(state.actorPhaseMap);
+}
+
+function _buildActorAnchorCard(group, phaseMap) {
+  const phaseCoverage = Object.keys(phaseMap).filter(k => phaseMap[k].length).length;
+  const techCount = (group.techniques || []).length;
+  const attackId = group.attack_id || "";
+  const aliases = (group.aliases || []).filter(a => a !== group.name).slice(0, 3).join(", ");
+  return `
+    <div class="workflow-anchor-card workflow-actor-card">
+      <small>Threat Actor</small>
+      <h3>${group.name}<span style="font-family:var(--font-mono);font-weight:400;font-size:12px;color:var(--text-muted);margin-left:10px;">${attackId}</span></h3>
+      <div class="workflow-anchor-meta">
+        <span>${techCount} technique${techCount !== 1 ? "s" : ""}</span>
+        <span style="color:var(--text-muted)">·</span>
+        <span>${phaseCoverage} phase${phaseCoverage !== 1 ? "s" : ""}</span>
+        ${aliases ? `<span style="color:var(--text-muted)">·</span><span style="color:var(--text-soft)">${aliases}</span>` : ""}
+      </div>
+      <div class="workflow-card-actions">
+        <button type="button" class="ghost-btn" data-clear-actor-profile="true">Clear Profile</button>
+      </div>
+    </div>
+  `;
+}
+
+function _renderActorTimeline(phaseMap) {
+  if (!workflowTimeline) return;
+  const counts = WORKFLOW_TACTIC_SEQUENCE.map(p => (phaseMap[p.shortname] || []).length);
+  const maxCount = Math.max(...counts, 1);
+
+  workflowTimeline.innerHTML = WORKFLOW_TACTIC_SEQUENCE.map(phase => {
+    const count = counts[phase.index];
+    const isSelected = state.activeWorkflowPhaseIndex === phase.index;
+    const classes = ["timeline-phase"];
+    if (count > 0) {
+      classes.push("is-active");
+      classes.push(`actor-intensity-${Math.ceil((count / maxCount) * 3)}`); // 1–3
+    }
+    if (isSelected) classes.push("is-selected");
+    const number = String(phase.index + 1).padStart(2, "0");
+    return `
+      <div class="timeline-item">
+        <div class="${classes.join(" ")}"
+          data-phase-index="${phase.index}"
+          role="button" tabindex="0"
+          aria-pressed="${isSelected ? "true" : "false"}"
+        >
+          <span class="timeline-phase-number">Phase ${number}${count > 0 ? ` · ${count}` : ""}</span>
+          <span class="timeline-phase-label">${phase.label}</span>
+        </div>
+      </div>
+    `;
+  }).join("");
+}
+
+function _renderActorPhaseDetails(phaseMap) {
+  if (!workflowPhaseList) return;
+  if (!Number.isFinite(state.activeWorkflowPhaseIndex)) {
+    workflowPhaseList.innerHTML = "";
+    workflowPhaseList.classList.add("is-hidden");
+    if (workflowPhasePlaceholder) workflowPhasePlaceholder.classList.remove("is-hidden");
+    return;
+  }
+  if (workflowPhasePlaceholder) workflowPhasePlaceholder.classList.add("is-hidden");
+
+  const phase = WORKFLOW_TACTIC_SEQUENCE[state.activeWorkflowPhaseIndex];
+  if (!phase) return;
+  const techIds = (phaseMap[phase.shortname] || [])
+    .sort((a, b) => _getUsageScore(b) - _getUsageScore(a));
+
+  const limit = (state.workflowCardLimit || 5) * 2;
+  const cards = techIds.slice(0, limit).map(techId => {
+    const tech = state.techniqueMap[techId];
+    if (!tech) return "";
+    return renderWorkflowTechniqueCard({ techId, technique: tech, relation: "actor", weight: 0, entities: {} });
+  }).join("");
+
+  workflowPhaseList.classList.remove("is-hidden");
+  workflowPhaseList.innerHTML = `
+    <div class="workflow-phase-column" data-phase-state="anchor">
+      <div class="workflow-phase-header">
+        <p class="phase-metadata">Actor · Phase ${phase.index + 1}</p>
+        <h4>${phase.label}</h4>
+      </div>
+      <div class="workflow-phase-section">
+        <p class="phase-section-title">Used by this actor <span style="opacity:0.5;font-weight:400;">${techIds.length}</span></p>
+        ${cards || buildPhaseEmptyState("No recorded techniques for this actor in this phase.")}
+      </div>
+    </div>
   `;
 }

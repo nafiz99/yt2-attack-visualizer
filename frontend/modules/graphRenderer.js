@@ -7,7 +7,6 @@ import {
   updateStatusChipText,
   updateModeTabsUI,
   syncWorkspaceViewForMode,
-  updateContextToggleLabel,
   getModeLabel,
 } from "./ui.js";
 import {
@@ -37,6 +36,47 @@ import {
 } from "./search.js";
 // renderWorkflowView and setWorkflowAnchor imported inside function bodies to break circular init
 // They are only called after all modules have loaded.
+
+// --- Navigation History ---
+
+const navHistory = [];   // array of nodeIds
+let navIndex = -1;       // pointer into navHistory
+let navSuppressRecord = false; // flag: skip recording when navigating
+
+function updateNavButtons() {
+  const backBtn = document.getElementById("navBack");
+  const fwdBtn = document.getElementById("navForward");
+  if (backBtn) backBtn.disabled = navIndex <= 0;
+  if (fwdBtn)  fwdBtn.disabled  = navIndex >= navHistory.length - 1;
+}
+
+function recordNavEntry(nodeId) {
+  if (navSuppressRecord) return;
+  if (navHistory[navIndex] === nodeId) return; // same node, no-op
+  // Drop forward entries whenever a new navigation happens
+  navHistory.splice(navIndex + 1);
+  navHistory.push(nodeId);
+  navIndex = navHistory.length - 1;
+  updateNavButtons();
+}
+
+export function navigateBack() {
+  if (navIndex <= 0) return;
+  navIndex--;
+  navSuppressRecord = true;
+  focusNodeById(navHistory[navIndex]);
+  navSuppressRecord = false;
+  updateNavButtons();
+}
+
+export function navigateForward() {
+  if (navIndex >= navHistory.length - 1) return;
+  navIndex++;
+  navSuppressRecord = true;
+  focusNodeById(navHistory[navIndex]);
+  navSuppressRecord = false;
+  updateNavButtons();
+}
 
 // --- Node Map Hydration ---
 
@@ -101,6 +141,7 @@ export function buildAttackDefaultView(limit = state.nodeSampleLimit) {
 
   const techniqueLimit = Math.max(5, Math.min(limit, sortedEdges.length));
   const parentTechniqueIds = [];
+  const visibleTechniqueIds = new Set();
   const tacticForTechnique = new Map();
   const seenTechniques = new Set();
 
@@ -125,6 +166,7 @@ export function buildAttackDefaultView(limit = state.nodeSampleLimit) {
   };
 
   parentTechniqueIds.forEach(techId => {
+    visibleTechniqueIds.add(techId);
     addNodeIfPresent(techId);
     const tacticId = tacticForTechnique.get(techId);
     if (tacticId) {
@@ -157,6 +199,7 @@ export function buildAttackDefaultView(limit = state.nodeSampleLimit) {
   const supplementaryEdges = [];
   subtechAssignments.slice(0, subtechCap).forEach(entry => {
     addNodeIfPresent(entry.child.id);
+    visibleTechniqueIds.add(entry.child.id);
     supplementaryEdges.push(
       buildEdgeElement(
         { source: entry.child.id, target: entry.parentId, type: "contains-subtechnique" },
@@ -165,10 +208,50 @@ export function buildAttackDefaultView(limit = state.nodeSampleLimit) {
     );
   });
 
+  const overlayEdges = state.useContextEntities
+    ? buildContextOverlays({
+        techniqueIds: visibleTechniqueIds,
+        nodeIds,
+        nodeElements,
+        limit,
+      })
+    : [];
+
   return {
-    elements: [...nodeElements, ...primaryEdges, ...supplementaryEdges],
+    elements: [...nodeElements, ...primaryEdges, ...supplementaryEdges, ...overlayEdges],
     nodesCount: nodeElements.length,
-    edgesCount: primaryEdges.length + supplementaryEdges.length,
+    edgesCount: primaryEdges.length + supplementaryEdges.length + overlayEdges.length,
+  };
+}
+
+export function buildTechniqueFocusedView(limitOverride) {
+  const attackView = buildAttackDefaultView(limitOverride);
+  if (!attackView.elements.length) return attackView;
+
+  const techniqueNodes = [];
+  const techniqueIds = new Set();
+  attackView.elements.forEach(el => {
+    if (!el || !el.data) return;
+    const isEdge = typeof el.data.source !== "undefined" || typeof el.data.target !== "undefined";
+    if (!isEdge && el.data.node_type === "technique") {
+      techniqueNodes.push(el);
+      techniqueIds.add(el.data.id);
+    }
+  });
+
+  if (!techniqueNodes.length) return attackView;
+
+  const techniqueEdges = attackView.elements.filter(el => {
+    if (!el || !el.data) return false;
+    if (typeof el.data.source === "undefined") return false;
+    if (el.data.type !== "contains-subtechnique") return false;
+    return techniqueIds.has(el.data.source) && techniqueIds.has(el.data.target);
+  });
+
+  return {
+    elements: [...techniqueNodes, ...techniqueEdges],
+    nodesCount: techniqueNodes.length,
+    edgesCount: techniqueEdges.length,
   };
 }
 
@@ -399,10 +482,51 @@ export function buildContextEntityView(entityId, entityType) {
 
 export function buildModeAwareDefaultView(limitOverride) {
   const limit = limitOverride ?? state.nodeSampleLimit;
+  if (state.activeMode === "techniques") return buildTechniqueFocusedView(limit);
   const targetType = MODE_NODE_TYPES[state.activeMode];
   if (state.activeMode === "attack" || !targetType) return buildAttackDefaultView(limit);
   return buildContextDefaultView(targetType, limit);
 }
+
+const CONTEXT_OVERLAY_CONFIG = [
+  { nodeType: "group", edgeTypes: ["group-technique"], perTechnique: 2 },
+  { nodeType: "malware", edgeTypes: ["malware-technique"], perTechnique: 2 },
+  { nodeType: "campaign", edgeTypes: ["campaign-technique"], perTechnique: 2 },
+  { nodeType: "procedure", edgeTypes: ["procedure-technique"], perTechnique: 1 },
+];
+
+function buildContextOverlays({ techniqueIds, nodeIds, nodeElements, limit }) {
+  if (!techniqueIds.size || !state.graphDataExtended) return [];
+  const overlayEdges = [];
+  const maxNewNodes = Math.max(2, Math.floor(limit * 0.4));
+  let nodesAdded = 0;
+  CONTEXT_OVERLAY_CONFIG.forEach(config => {
+    if (nodesAdded >= maxNewNodes) return;
+    const perTypeCap = Math.max(1, Math.floor(maxNewNodes / CONTEXT_OVERLAY_CONFIG.length));
+    let perTypeAdded = 0;
+    const perTechniqueCounts = new Map();
+    state.graphDataRef.edges.forEach(edge => {
+      if (nodesAdded >= maxNewNodes || perTypeAdded >= perTypeCap) return;
+      if (!config.edgeTypes.includes(edge.type)) return;
+      if (!techniqueIds.has(edge.target)) return;
+      const contextNode = state.nodeMap[edge.source] || state.allNodeMap[edge.source];
+      if (!contextNode || contextNode.node_type !== config.nodeType) return;
+      const used = perTechniqueCounts.get(edge.target) || 0;
+      if (used >= config.perTechnique) return;
+      if (!nodeIds.has(contextNode.id)) {
+        nodeElements.push(buildNodeElement(contextNode));
+        nodeIds.add(contextNode.id);
+        nodesAdded += 1;
+        perTypeAdded += 1;
+        if (nodesAdded >= maxNewNodes) return;
+      }
+      perTechniqueCounts.set(edge.target, used + 1);
+      overlayEdges.push(buildEdgeElement(edge));
+    });
+  });
+  return overlayEdges;
+}
+
 
 // --- Rendering ---
 
@@ -503,7 +627,13 @@ export function renderElements(elements, statusText, options = {}) {
       state.cy.elements().removeClass("selected-node");
       if (selectedId) {
         const selected = state.cy.getElementById(selectedId);
-        if (selected) selected.addClass("selected-node");
+        if (selected && selected.length) {
+          selected.addClass("selected-node");
+          state.cy.animate(
+            { center: { eles: selected }, zoom: Math.min(1.6, Math.max(0.6, state.cy.zoom())) },
+            { duration: 400, easing: "ease-out" }
+          );
+        }
       }
     });
     updateStatusChipText(statusText);
@@ -520,7 +650,7 @@ export function renderElements(elements, statusText, options = {}) {
   state.cy.one("layoutstop", () => {
     if (selectedId) {
       const selected = state.cy.getElementById(selectedId);
-      if (selected) {
+      if (selected && selected.length) {
         selected.addClass("selected-node");
         state.cy.animate(
           { center: { eles: selected }, zoom: Math.min(1.6, Math.max(0.6, state.cy.zoom())) },
@@ -573,6 +703,8 @@ export function focusNodeById(nodeId, options = {}) {
   }
   if (!matchedNode) return;
 
+  recordNavEntry(nodeId);
+
   if (state.detailsPanelManuallyHidden) {
     openDetailsPanel();
   } else {
@@ -614,9 +746,13 @@ export function focusNodeById(nodeId, options = {}) {
   }
 
   if (!forceExpand && !state.useFullChain && matchedNode.node_type === "technique") {
-    highlightWithinCurrentView(nodeId);
-    renderTechniqueDetails(matchedNode, nodeId);
-    return;
+    const nodeInGraph = state.cy && state.cy.getElementById(nodeId).length > 0;
+    if (nodeInGraph) {
+      highlightWithinCurrentView(nodeId);
+      renderTechniqueDetails(matchedNode, nodeId);
+      return;
+    }
+    // Node not in current view (e.g. navigating back/forward) — fall through to render a view containing it
   }
 
   if (matchedNode.is_subtechnique) {
@@ -647,7 +783,6 @@ export function setContextMode(enable, options = {}) {
   if (!state.graphDataExtended) return;
   const { skipReset = false } = options;
   if (state.useContextEntities === enable) {
-    updateContextToggleLabel();
     updateModeTabsUI();
     if (!skipReset) resetToDefaultView();
     return;
@@ -655,7 +790,6 @@ export function setContextMode(enable, options = {}) {
   state.useContextEntities = enable;
   state.graphDataRef = state.useContextEntities ? state.graphDataExtended : state.graphDataCore;
   hydrateNodeMap(state.graphDataRef);
-  updateContextToggleLabel();
   updateModeTabsUI();
   if (!skipReset) resetToDefaultView();
 }
@@ -665,12 +799,20 @@ export function setActiveMode(mode, options = {}) {
   const isWorkflowMode = mode === "workflow";
   const isContextGraphMode = Boolean(MODE_NODE_TYPES[mode]);
   const isAttackMode = mode === "attack";
-  if (!isWorkflowMode && !isAttackMode && !isContextGraphMode) return;
+  const isTechniqueMode = mode === "techniques";
+  if (!isWorkflowMode && !isAttackMode && !isTechniqueMode && !isContextGraphMode) return;
   if (isContextGraphMode && !state.graphDataExtended) return;
 
   state.activeMode = mode;
   updateModeTabsUI();
   syncWorkspaceViewForMode();
+
+  if (isContextGraphMode && !state.useContextEntities) {
+    setContextMode(true, { skipReset: true });
+  }
+
+  const dataReady = Boolean(state.graphDataRef?.nodes && state.graphDataRef?.edges);
+  if (!dataReady) return;
 
   if (isWorkflowMode) {
     restoreDetailsPanel();
@@ -681,13 +823,12 @@ export function setActiveMode(mode, options = {}) {
     return;
   }
 
-  const requiresContext = isContextGraphMode;
-  setContextMode(requiresContext, { skipReset: true });
   if (!skipReset) resetToDefaultView();
 }
 
 export function resetToDefaultView(options = {}) {
   const { preservePositions = false } = options;
+  if (!state.graphDataRef?.nodes || !state.graphDataRef?.edges) return;
   if (state.activeMode === "workflow") {
     if (!preservePositions) {
       state.activeWorkflowTechniqueId = null;
@@ -721,14 +862,15 @@ export function getCytoscapeStyle() {
       selector: "node",
       style: {
         label: "data(label)",
+        "font-family": "Open Sans, Segoe UI, system-ui, sans-serif",
         "font-size": "11px",
         "font-weight": "600",
         "text-wrap": "wrap",
         "text-max-width": "150px",
         width: 38,
         height: 38,
-        "background-color": "#7c8bff",
-        color: "#f5f8ff",
+        "background-color": "#1a72d4",
+        color: "#ffffff",
         "text-outline-width": 2,
         "text-outline-color": "rgba(5, 12, 28, 0.65)",
         "border-width": 2,
@@ -742,7 +884,7 @@ export function getCytoscapeStyle() {
     {
       selector: 'node[node_type = "tactic"]',
       style: {
-        "background-color": "#c77dff",
+        "background-color": "#c63f1f",
         shape: "round-rectangle",
         width: 48,
         height: 30,
@@ -752,11 +894,11 @@ export function getCytoscapeStyle() {
     },
     {
       selector: 'node[node_type = "technique"][is_subtechnique = false]',
-      style: { "background-color": "#5de0c1", "border-color": "rgba(93, 224, 193, 0.9)" },
+      style: { "background-color": "#1a72d4", "border-color": "rgba(26, 114, 212, 0.9)" },
     },
     {
       selector: 'node[node_type = "technique"][is_subtechnique = true]',
-      style: { "background-color": "#ffb347", "border-color": "rgba(255, 179, 71, 0.9)" },
+      style: { "background-color": "#4f9fdc", "border-color": "rgba(79, 159, 220, 0.9)" },
     },
     {
       selector: 'node[node_type = "technique"][is_subtechnique = false]',
@@ -765,7 +907,7 @@ export function getCytoscapeStyle() {
     {
       selector: 'node[node_type = "group"]',
       style: {
-        "background-color": "#ff7043",
+        "background-color": "#e05030",
         shape: "round-rectangle",
         width: 46,
         height: 32,
@@ -775,7 +917,7 @@ export function getCytoscapeStyle() {
     {
       selector: 'node[node_type = "malware"]',
       style: {
-        "background-color": "#26c6da",
+        "background-color": "#2e9e6a",
         shape: "round-rectangle",
         width: 46,
         height: 32,
@@ -785,7 +927,7 @@ export function getCytoscapeStyle() {
     {
       selector: 'node[node_type = "campaign"]',
       style: {
-        "background-color": "#f06292",
+        "background-color": "#8855cc",
         shape: "round-rectangle",
         width: 46,
         height: 32,
@@ -829,8 +971,8 @@ export function getCytoscapeStyle() {
       selector: 'edge[type = "tactic-technique"]',
       style: {
         width: 3,
-        "line-color": "rgba(199, 125, 255, 0.8)",
-        "target-arrow-color": "rgba(199, 125, 255, 0.9)",
+        "line-color": "rgba(198, 63, 31, 0.8)",
+        "target-arrow-color": "rgba(198, 63, 31, 0.9)",
         opacity: 0.85,
       },
     },
@@ -838,8 +980,8 @@ export function getCytoscapeStyle() {
       selector: 'edge[type = "contains-subtechnique"]',
       style: {
         width: 3,
-        "line-color": "rgba(255, 179, 71, 0.9)",
-        "target-arrow-color": "rgba(255, 179, 71, 0.9)",
+        "line-color": "rgba(79, 159, 220, 0.9)",
+        "target-arrow-color": "rgba(79, 159, 220, 0.9)",
         "line-style": "dashed",
         opacity: 1,
       },
@@ -848,40 +990,40 @@ export function getCytoscapeStyle() {
       selector: 'edge[type = "subtechnique-of"]',
       style: {
         width: 3,
-        "line-color": "rgba(152, 165, 255, 0.6)",
-        "target-arrow-color": "rgba(152, 165, 255, 0.7)",
+        "line-color": "rgba(79, 124, 172, 0.65)",
+        "target-arrow-color": "rgba(79, 124, 172, 0.75)",
         opacity: 0.9,
       },
     },
     {
       selector: 'edge[type = "group-technique"]',
       style: {
-        "line-color": "rgba(255, 112, 67, 0.9)",
-        "target-arrow-color": "rgba(255, 112, 67, 0.9)",
+        "line-color": "rgba(224, 80, 48, 0.9)",
+        "target-arrow-color": "rgba(224, 80, 48, 0.9)",
         width: 3,
       },
     },
     {
       selector: 'edge[type = "malware-technique"]',
       style: {
-        "line-color": "rgba(38, 198, 218, 0.9)",
-        "target-arrow-color": "rgba(38, 198, 218, 0.9)",
+        "line-color": "rgba(46, 158, 106, 0.9)",
+        "target-arrow-color": "rgba(46, 158, 106, 0.9)",
         width: 3,
       },
     },
     {
       selector: 'edge[type = "campaign-technique"]',
       style: {
-        "line-color": "rgba(240, 98, 146, 0.9)",
-        "target-arrow-color": "rgba(240, 98, 146, 0.9)",
+        "line-color": "rgba(136, 85, 204, 0.9)",
+        "target-arrow-color": "rgba(136, 85, 204, 0.9)",
         width: 3,
       },
     },
     {
       selector: 'edge[type = "campaign-group"]',
       style: {
-        "line-color": "rgba(255, 112, 67, 0.7)",
-        "target-arrow-color": "rgba(255, 112, 67, 0.7)",
+        "line-color": "rgba(198, 63, 31, 0.65)",
+        "target-arrow-color": "rgba(198, 63, 31, 0.65)",
         "line-style": "dotted",
         width: 2,
       },
@@ -889,8 +1031,8 @@ export function getCytoscapeStyle() {
     {
       selector: 'edge[type = "campaign-malware"]',
       style: {
-        "line-color": "rgba(38, 198, 218, 0.7)",
-        "target-arrow-color": "rgba(38, 198, 218, 0.7)",
+        "line-color": "rgba(46, 158, 106, 0.65)",
+        "target-arrow-color": "rgba(46, 158, 106, 0.65)",
         "line-style": "dotted",
         width: 2,
       },
@@ -916,25 +1058,25 @@ export function getCytoscapeStyle() {
     {
       selector: ".selected-node",
       style: {
-        "background-color": "#e53935",
+        "background-color": "#c63f1f",
         width: 48,
         height: 48,
         "font-size": "12px",
         "border-width": 4,
-        "border-color": "#ffb4a4",
+        "border-color": "#f5a88c",
         "shadow-blur": 22,
-        "shadow-color": "rgba(229, 57, 53, 0.6)",
+        "shadow-color": "rgba(198, 63, 31, 0.65)",
       },
     },
     {
       selector: ".connected-node",
-      style: { "background-color": "#1e88e5", width: 40, height: 40 },
+      style: { "background-color": "#0156b3", width: 40, height: 40 },
     },
     {
       selector: ".highlighted-edge",
       style: {
-        "line-color": "#1e88e5",
-        "target-arrow-color": "#1e88e5",
+        "line-color": "#0156b3",
+        "target-arrow-color": "#0156b3",
         width: 5,
         opacity: 1,
       },

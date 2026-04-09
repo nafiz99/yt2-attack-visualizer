@@ -103,9 +103,11 @@ const workflowPhaseList = document.getElementById("workflowPhaseList");
 const workflowAnchorDetails = document.getElementById("workflowAnchorDetails");
 const workflowEmptyState = document.getElementById("workflowEmptyState");
 const workflowPhasePlaceholder = document.getElementById("workflowPhasePlaceholder");
-const workflowBackToGraphButton = document.getElementById("workflowBackToGraph");
 const workflowTimelineToggleButton = document.getElementById("workflowTimelineToggle");
 const searchSuggestionsContainer = document.getElementById("searchSuggestions");
+const searchControls = document.getElementById("canvasSearchControls");
+const workflowSearchMount = document.getElementById("workflowSearchMount");
+const graphSearchMount = document.getElementById("graphSearchMount");
 let currentTheme = "dark";
 let detailsPanelManuallyHidden = false;
 const detailsContainer = document.getElementById("details");
@@ -497,6 +499,17 @@ Promise.all([
       }
       if (legendWrapper) {
         legendWrapper.classList.toggle("is-hidden", workflowActive);
+      }
+      const canvasCard = document.querySelector(".canvas-card");
+      if (canvasCard) {
+        canvasCard.classList.toggle("graph-only", !workflowActive);
+        canvasCard.classList.toggle("workflow-expanded", workflowActive);
+      }
+      if (searchControls && workflowSearchMount && graphSearchMount) {
+        const target = workflowActive ? workflowSearchMount : graphSearchMount;
+        if (!target.contains(searchControls)) {
+          target.appendChild(searchControls);
+        }
       }
     }
 
@@ -1502,17 +1515,14 @@ Promise.all([
           const classes = ["timeline-phase"];
           if (isActive) classes.push("is-active");
           if (isSelected) classes.push("is-selected");
-          const arrow =
-            index < phasesToRender.length - 1
-              ? `<div class="timeline-arrow" aria-hidden="true">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <path d="M5 12h14"></path>
-                    <path d="m13 6 6 6-6 6"></path>
-                  </svg>
-                </div>`
-              : "";
           const rawIndex = Number.isFinite(phase.index) ? phase.index + 1 : index + 1;
           const number = String(rawIndex).padStart(2, "0");
+          const arrow =
+            index < phasesToRender.length - 1
+              ? `<span class="timeline-arrow" aria-hidden="true">
+                  <span class="material-symbols-rounded">arrow_forward</span>
+                </span>`
+              : "";
           return `
             <div class="timeline-item">
               <div
@@ -1525,8 +1535,8 @@ Promise.all([
                 <span class="timeline-phase-number">Phase ${number}</span>
                 <span class="timeline-phase-label">${phase.label}</span>
               </div>
-              ${arrow}
             </div>
+            ${arrow}
           `;
         })
         .join("");
@@ -1788,12 +1798,18 @@ Promise.all([
         .filter(Boolean);
     }
 
-    function buildWorkflowSection(title, techniques) {
+    function buildWorkflowSection(title, techniques, variant = "default") {
       if (!techniques || !techniques.length) return "";
+      const sectionClasses = ["workflow-phase-section"];
+      if (variant === "parallel") sectionClasses.push("workflow-phase-section--parallel");
+      const content =
+        variant === "parallel"
+          ? `<div class="workflow-parallel-grid">${techniques.map(renderWorkflowTechniqueCard).join("")}</div>`
+          : techniques.map(renderWorkflowTechniqueCard).join("");
       return `
-        <div class="workflow-phase-section">
+        <div class="${sectionClasses.join(" ")}">
           <p class="phase-section-title">${title}</p>
-          ${techniques.map(renderWorkflowTechniqueCard).join("")}
+          ${content}
         </div>
       `;
     }
@@ -1804,27 +1820,30 @@ Promise.all([
 
     function renderWorkflowPhaseColumn(column) {
       if (!column || !column.phase) return "";
-      const sections = [];
+      const mainSections = [];
+      let parallelSection = "";
       if (column.anchorTechniques.length) {
-        sections.push(buildWorkflowSection("Anchored Technique", column.anchorTechniques));
+        mainSections.push(buildWorkflowSection("Anchored Technique", column.anchorTechniques));
       }
       if (column.preceding.length) {
-        sections.push(buildWorkflowSection("Likely preceding steps", column.preceding));
+        mainSections.push(buildWorkflowSection("Likely preceding steps", column.preceding));
       } else if (column.state === "before") {
-        sections.push(buildPhaseEmptyState("No strong upstream techniques detected in this phase."));
+        mainSections.push(buildPhaseEmptyState("No strong upstream techniques detected in this phase."));
       }
       if (column.parallels.length) {
-        sections.push(buildWorkflowSection("Parallel options", column.parallels));
+        parallelSection = buildWorkflowSection("Parallel options", column.parallels, "parallel");
       }
       if (column.succeeding.length) {
-        sections.push(buildWorkflowSection("Likely downstream steps", column.succeeding));
+        mainSections.push(buildWorkflowSection("Likely downstream steps", column.succeeding));
       } else if (column.state === "after" && !column.anchorTechniques.length) {
-        sections.push(buildPhaseEmptyState("No downstream links surfaced yet."));
+        mainSections.push(buildPhaseEmptyState("No downstream links surfaced yet."));
       }
       if (column.fallback.length) {
-        sections.push(buildWorkflowSection("Common ATT&CK techniques", column.fallback));
+        mainSections.push(buildWorkflowSection("Common ATT&CK techniques", column.fallback));
       }
-      const body = sections.length ? sections.join("") : buildPhaseEmptyState("No signals available for this phase.");
+      const mainBody = mainSections.length
+        ? mainSections.join("")
+        : buildPhaseEmptyState("No signals available for this phase.");
 
       return `
         <div class="workflow-phase-column" data-phase-state="${column.state}">
@@ -1833,7 +1852,10 @@ Promise.all([
             <h4>${column.phase.label}</h4>
           </div>
           <div class="workflow-phase-body">
-            ${body}
+            <div class="workflow-phase-main">
+              ${mainBody}
+            </div>
+            ${parallelSection ? `<div class="workflow-phase-side">${parallelSection}</div>` : ""}
           </div>
         </div>
       `;
@@ -3232,12 +3254,6 @@ Promise.all([
     document.getElementById("resetView").addEventListener("click", function () {
       resetToDefaultView();
     });
-
-    if (workflowBackToGraphButton) {
-      workflowBackToGraphButton.addEventListener("click", () => {
-        setActiveMode("attack");
-      });
-    }
 
     if (workflowTimelineToggleButton) {
       workflowTimelineToggleButton.addEventListener("click", () => {
