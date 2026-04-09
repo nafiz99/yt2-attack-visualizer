@@ -44,6 +44,15 @@ export const state = {
   workflowPhaseColumns: new Map(),
   workflowTimelineHighlights: [],
   workflowTimelineExpanded: false,
+  // Actor profile mode
+  activeActorId: null,
+  actorPhaseMap: {},
+
+  // Workflow sidebar settings
+  workflowCardLimit: 5,        // cards shown per phase section
+  workflowPhaseReach: 4,       // max phase delta for surfacing connections
+  workflowShowContextChips: true,  // show group/malware/campaign chips on cards
+  workflowCardDetail: "standard",  // "standard" | "compact"
 
   // Workflow indexes (populated during init)
   techniquePhaseLookup: {},
@@ -76,7 +85,8 @@ export const MODE_NODE_TYPES = {
 };
 
 export const MODE_LABELS = {
-  attack: "Graph",
+  attack: "Tactics",
+  techniques: "Techniques",
   workflow: "Workflow",
   groups: "Groups",
   malware: "Malware",

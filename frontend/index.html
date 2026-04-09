@@ -5,7 +5,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>YT2 ATT&CK Graph Viewer</title>
 
-  <link rel="stylesheet" href="styles.css?v=13" />
+  <link rel="stylesheet" href="styles.css?v=27" />
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:wght@400;500&display=swap" />
   <script src="https://unpkg.com/cytoscape/dist/cytoscape.min.js"></script>
 </head>
 
@@ -14,95 +15,12 @@
     <aside class="command-rail" id="navSidebar">
       <div class="rail-header">
         <p class="eyebrow">Visualization Suite</p>
-      </div>
-      <p class="rail-label">View</p>
-      <nav class="rail-tabs" id="modeTabs" role="tablist" aria-label="View mode">
-        <button type="button" class="mode-tab active" data-mode="workflow" role="tab" aria-selected="true">
-          Workflow
-        </button>
-        <button type="button" class="mode-tab" data-mode="attack" role="tab" aria-selected="false">
-          Graph
-        </button>
-      </nav>
-      <div class="sidebar-section">
-        <p class="rail-label">Focus</p>
-        <label class="sidebar-select" for="focusModeSelect">
-          <span>Entities</span>
-          <select id="focusModeSelect">
-            <option value="">None</option>
-            <option value="groups">Groups</option>
-            <option value="malware">Malware</option>
-            <option value="campaigns">Campaigns</option>
-            <option value="procedures">Procedures</option>
-          </select>
-        </label>
-      </div>
-      <div class="sidebar-section filters-section">
-        <p class="rail-label">Filters</p>
-        
-          <div class="filter-grid">
-            <label class="chip-field" for="domainFilter">
-              <span>Domain</span>
-              <select id="domainFilter" aria-label="Domain filter">
-                <option value="all">All Domains</option>
-                <option value="enterprise-attack">Enterprise</option>
-                <option value="mobile-attack">Mobile</option>
-                <option value="ics-attack">ICS</option>
-              </select>
-            </label>
-            <label class="chip-field" for="focusFilter">
-              <span>Signal</span>
-              <select id="focusFilter" aria-label="Signal filter">
-                <option value="balanced">Balanced</option>
-                <option value="parents">Parent Techniques</option>
-                <option value="subtech">+ Sub-techniques</option>
-              </select>
-            </label>
-            <label class="chip-field" for="phaseFilter">
-              <span>Phase</span>
-              <select id="phaseFilter" aria-label="Phase filter">
-                <option value="all">All Phases</option>
-                <option value="reconnaissance">Reconnaissance</option>
-                <option value="resource-development">Resource Development</option>
-                <option value="initial-access">Initial Access</option>
-                <option value="execution">Execution</option>
-                <option value="persistence">Persistence</option>
-                <option value="privilege-escalation">Privilege Escalation</option>
-                <option value="defense-evasion">Defense Evasion</option>
-                <option value="credential-access">Credential Access</option>
-                <option value="discovery">Discovery</option>
-                <option value="lateral-movement">Lateral Movement</option>
-                <option value="collection">Collection</option>
-                <option value="command-and-control">Command &amp; Control</option>
-                <option value="exfiltration">Exfiltration</option>
-                <option value="impact">Impact</option>
-              </select>
-            </label>
-            <label class="chip-field" for="sortOrder">
-              <span>Sort</span>
-              <select id="sortOrder" aria-label="Sort order">
-                <option value="phase">Phase Order</option>
-                <option value="signal">Signal Strength</option>
-                <option value="alpha">Name A-Z</option>
-                <option value="attack">ATT&amp;CK ID</option>
-              </select>
-            </label>
-            <label class="chip-field" for="layoutStrategy">
-              <span>Layout</span>
-              <select id="layoutStrategy" aria-label="Layout">
-                <option value="cose">Force-directed</option>
-                <option value="concentric">Concentric</option>
-                <option value="breadthfirst">Hierarchy</option>
-              </select>
-            </label>
-          </div>
-      </div>
-      <div class="rail-footer">
         <button
           id="themeToggle"
           type="button"
-          class="ghost-btn theme-toggle"
+          class="ghost-btn icon-btn-compact theme-toggle"
           aria-label="Toggle color theme"
+          title="Toggle color theme"
         >
           <span class="theme-icon">
             <svg class="icon-sun" viewBox="0 0 24 24" aria-hidden="true">
@@ -122,14 +40,198 @@
               <path fill="currentColor" d="M21 12.8A9 9 0 0 1 11.2 3a7 7 0 1 0 9.8 9.8Z"></path>
             </svg>
           </span>
-          <span class="theme-toggle-text">Dark Mode</span>
           <span class="sr-only">Toggle theme</span>
+        </button>
+      </div>
+
+      <p class="rail-label">View</p>
+      <nav class="rail-tabs" id="modeTabs" role="tablist" aria-label="View mode">
+        <button type="button" class="mode-tab active" data-mode="workflow" role="tab" aria-selected="true">
+          Workflow
+        </button>
+        <button type="button" class="mode-tab" data-mode="attack" role="tab" aria-selected="false">
+          Graph
+        </button>
+      </nav>
+
+      <!-- GRAPH-ONLY SECTIONS -->
+      <div class="sidebar-section focus-section" id="graphViewControlSection">
+        <p class="rail-label">View Control</p>
+        <label class="chip-field" for="focusModeSelect">
+          <span>Node</span>
+          <select id="focusModeSelect" aria-label="Focus mode">
+            <option value="attack">Tactics</option>
+            <option value="techniques">Techniques</option>
+            <option value="groups">Groups</option>
+            <option value="malware">Malware</option>
+            <option value="campaigns">Campaigns</option>
+            <option value="procedures">Procedures</option>
+          </select>
+        </label>
+        <label class="chip-field" for="detailModeSelect">
+          <span>Details</span>
+          <select id="detailModeSelect" aria-label="Detail level">
+            <option value="basic">Basic</option>
+            <option value="advanced">Advanced</option>
+          </select>
+        </label>
+        <div class="nav-history-row">
+          <button
+            id="navBack"
+            type="button"
+            class="nav-history-btn"
+            aria-label="Go back to previous node"
+            title="Back"
+            disabled
+          >
+            <span class="material-symbols-rounded" aria-hidden="true">arrow_back</span>
+            <span>Back</span>
+          </button>
+          <button
+            id="navForward"
+            type="button"
+            class="nav-history-btn"
+            aria-label="Go forward to next node"
+            title="Forward"
+            disabled
+          >
+            <span>Forward</span>
+            <span class="material-symbols-rounded" aria-hidden="true">arrow_forward</span>
+          </button>
+        </div>
+      </div>
+      <div class="sidebar-section filters-section" id="graphFiltersSection">
+        <p class="rail-label">Filters</p>
+        <div class="filter-grid">
+          <label class="chip-field" for="domainFilter">
+            <span>Domain</span>
+            <select id="domainFilter" aria-label="Domain filter">
+              <option value="all">All Domains</option>
+              <option value="enterprise-attack">Enterprise</option>
+              <option value="mobile-attack">Mobile</option>
+              <option value="ics-attack">ICS</option>
+            </select>
+          </label>
+          <label class="chip-field" for="focusFilter">
+            <span>Signal</span>
+            <select id="focusFilter" aria-label="Signal filter">
+              <option value="balanced">Balanced</option>
+              <option value="parents">Parent Techniques</option>
+              <option value="subtech">+ Sub-techniques</option>
+            </select>
+          </label>
+          <label class="chip-field" for="phaseFilter">
+            <span>Phase</span>
+            <select id="phaseFilter" aria-label="Phase filter">
+              <option value="all">All Phases</option>
+              <option value="reconnaissance">Reconnaissance</option>
+              <option value="resource-development">Resource Development</option>
+              <option value="initial-access">Initial Access</option>
+              <option value="execution">Execution</option>
+              <option value="persistence">Persistence</option>
+              <option value="privilege-escalation">Privilege Escalation</option>
+              <option value="defense-evasion">Defense Evasion</option>
+              <option value="credential-access">Credential Access</option>
+              <option value="discovery">Discovery</option>
+              <option value="lateral-movement">Lateral Movement</option>
+              <option value="collection">Collection</option>
+              <option value="command-and-control">Command &amp; Control</option>
+              <option value="exfiltration">Exfiltration</option>
+              <option value="impact">Impact</option>
+            </select>
+          </label>
+          <label class="chip-field" for="sortOrder">
+            <span>Sort</span>
+            <select id="sortOrder" aria-label="Sort order">
+              <option value="phase">Phase Order</option>
+              <option value="signal">Signal Strength</option>
+              <option value="alpha">Name A-Z</option>
+              <option value="attack">ATT&amp;CK ID</option>
+            </select>
+          </label>
+          <label class="chip-field" for="layoutStrategy">
+            <span>Layout</span>
+            <select id="layoutStrategy" aria-label="Layout">
+              <option value="cose">Force-directed</option>
+              <option value="concentric">Concentric</option>
+              <option value="breadthfirst">Hierarchy</option>
+            </select>
+          </label>
+        </div>
+      </div>
+
+      <!-- WORKFLOW-ONLY SECTION -->
+      <div class="sidebar-section workflow-controls-section is-hidden" id="workflowControlsSection">
+        <p class="rail-label">Workflow</p>
+        <div class="filter-grid">
+
+          <label class="chip-field" for="wfFullChainToggle">
+            <span>Chain</span>
+            <select id="wfFullChainToggle" aria-label="Show full chain">
+              <option value="anchored">Anchored phases</option>
+              <option value="full">Full chain</option>
+            </select>
+          </label>
+
+          <label class="chip-field" for="wfCardLimitSelect">
+            <span>Cards / phase</span>
+            <select id="wfCardLimitSelect" aria-label="Cards per phase">
+              <option value="3">3</option>
+              <option value="5" selected>5</option>
+              <option value="8">8</option>
+            </select>
+          </label>
+
+          <label class="chip-field" for="wfPhaseReachSelect">
+            <span>Phase reach</span>
+            <select id="wfPhaseReachSelect" aria-label="Phase reach">
+              <option value="2">Tight (±2)</option>
+              <option value="4" selected>Normal (±4)</option>
+              <option value="6">Wide (±6)</option>
+            </select>
+          </label>
+
+          <label class="chip-field" for="wfContextChipsToggle">
+            <span>Context chips</span>
+            <select id="wfContextChipsToggle" aria-label="Show context chips">
+              <option value="on" selected>Visible</option>
+              <option value="off">Hidden</option>
+            </select>
+          </label>
+
+          <label class="chip-field" for="wfCardDetailSelect">
+            <span>Card detail</span>
+            <select id="wfCardDetailSelect" aria-label="Card detail level">
+              <option value="standard" selected>Standard</option>
+              <option value="compact">Compact</option>
+            </select>
+          </label>
+
+          <label class="chip-field chip-field--wide" for="wfActorSelect">
+            <span>Actor profile</span>
+            <select id="wfActorSelect" aria-label="Threat actor profile">
+              <option value="">— Select actor —</option>
+            </select>
+          </label>
+
+        </div>
+      </div>
+
+      <div class="rail-footer">
+        <button
+          id="resetView"
+          type="button"
+          class="tertiary-btn"
+          aria-label="Reset all controls"
+          title="Reset all controls"
+        >
+          <span class="icon-dot" aria-hidden="true">&#8635;</span>
+          <span>Reset All</span>
         </button>
       </div>
     </aside>
 
     <div id="left" class="workspace">
-      
       <section class="canvas-card">
         <div class="legend-wrapper">
           <button
@@ -145,109 +247,94 @@
           </button>
           <div class="graph-legend is-hidden" id="graphLegend" aria-label="Graph legend">
             <button type="button" class="legend-close" id="legendClose" aria-label="Hide legend">&times;</button>
-          <div class="legend-section">
-            <p class="legend-title">Nodes</p>
-            <ul class="legend-list">
-              <li><span class="legend-dot tactic-node"></span>Tactic</li>
-              <li><span class="legend-dot technique-node"></span>Technique</li>
-              <li><span class="legend-dot subtech-node"></span>Sub-technique</li>
-              <li><span class="legend-dot group-node"></span>Group</li>
-              <li><span class="legend-dot malware-node"></span>Malware</li>
-              <li><span class="legend-dot campaign-node"></span>Campaign</li>
-              <li><span class="legend-dot procedure-node"></span>Procedure</li>
-            </ul>
-          </div>
-          <div class="legend-section">
-            <p class="legend-title">Edges</p>
-            <ul class="legend-list">
-              <li><span class="legend-line tactic-edge"></span>Tactic → Technique</li>
-              <li><span class="legend-line subtech-edge"></span>Sub-technique</li>
-              <li><span class="legend-line contains-edge"></span>Technique contains sub-tech</li>
-              <li><span class="legend-line group-edge"></span>Group/Malware/Campaign uses Technique</li>
-              <li><span class="legend-line procedure-edge"></span>Procedure linkage</li>
-            </ul>
+            <div class="legend-section">
+              <p class="legend-title">Nodes</p>
+              <ul class="legend-list">
+                <li><span class="legend-dot tactic-node"></span>Tactic</li>
+                <li><span class="legend-dot technique-node"></span>Technique</li>
+                <li><span class="legend-dot subtech-node"></span>Sub-technique</li>
+                <li><span class="legend-dot group-node"></span>Group</li>
+                <li><span class="legend-dot malware-node"></span>Malware</li>
+                <li><span class="legend-dot campaign-node"></span>Campaign</li>
+                <li><span class="legend-dot procedure-node"></span>Procedure</li>
+              </ul>
+            </div>
+            <div class="legend-section">
+              <p class="legend-title">Edges</p>
+              <ul class="legend-list">
+                <li><span class="legend-line tactic-edge"></span>Tactic → Technique</li>
+                <li><span class="legend-line subtech-edge"></span>Sub-technique</li>
+                <li><span class="legend-line contains-edge"></span>Technique contains sub-tech</li>
+                <li><span class="legend-line group-edge"></span>Group/Malware/Campaign uses Technique</li>
+                <li><span class="legend-line procedure-edge"></span>Procedure linkage</li>
+              </ul>
+            </div>
           </div>
         </div>
-        </div>
+
         <div class="workflow-panel" id="workflowPanel" aria-live="polite">
           <div class="workflow-panel-header">
             <div>
               <p class="eyebrow">Workflow / Kill Chain Mode</p>
-              <h2>ATT&CK Workflow Explorer</h2>
-              <p>Search for a technique to anchor it in the ordered ATT&CK phases, surface likely predecessors, successors, and parallel branches, and overlay relevant groups, malware, campaigns, and procedures.</p>
-            </div>
-            <div class="workflow-panel-actions">
-              <button
-                type="button"
-                class="ghost-btn icon-btn"
-                id="workflowBackToGraph"
-                data-mode="attack"
-                aria-label="Return to graph view"
-                title="Return to graph view"
-              >
-                <span>Back to Graph</span>
-              </button>
+              <h2>ATT&amp;CK Workflow Explorer</h2>
+              <p>Search for a technique to anchor it in the ordered ATT&amp;CK phases, surface likely predecessors, successors, and parallel branches, and overlay relevant groups, malware, campaigns, and procedures.</p>
             </div>
           </div>
-          <div class="workflow-timeline-controls">
-            <button
-              type="button"
-              class="ghost-btn icon-btn timeline-toggle-btn is-hidden"
-              id="workflowTimelineToggle"
-              aria-pressed="false"
-              aria-label="Show full chain"
-              title="Show full chain"
-            >
-              <span>Show Full Chain</span>
-            </button>
+
+          <div id="workflowSearchMount" class="workflow-search-slot">
+            <div class="canvas-search top-controls" id="canvasSearchControls">
+              <div class="search-field">
+                <label class="input-field" for="search">
+                  <span class="sr-only">Search ATT&CK ID or name</span>
+                  <input
+                    id="search"
+                    type="text"
+                    placeholder="Search ATT&CK ID or name..."
+                    autocomplete="off"
+                    aria-autocomplete="list"
+                    aria-expanded="false"
+                    aria-owns="searchSuggestions"
+                  />
+                  <span class="input-icon" aria-hidden="true">
+                    <svg viewBox="0 0 24 24" class="icon-search" focusable="false">
+                      <path d="M10.5 3a7.5 7.5 0 0 1 5.917 12.075l4.254 4.254-1.414 1.414-4.254-4.254A7.5 7.5 0 1 1 10.5 3Zm0 2a5.5 5.5 0 1 0 3.89 9.39 5.5 5.5 0 0 0-3.89-9.39Z" fill="currentColor"/>
+                    </svg>
+                  </span>
+                </label>
+                <div class="search-suggestions is-hidden" id="searchSuggestions" role="listbox"></div>
+              </div>
+            </div>
           </div>
-          <div class="workflow-phase-timeline" id="workflowPhaseTimeline" aria-label="ATT&CK phase timeline"></div>
+
+          <div class="recent-anchors-section is-hidden" id="recentAnchorsSection">
+            <p class="recent-anchors-label">Recent</p>
+            <div id="recentAnchorsList" class="recent-anchors-list"></div>
+          </div>
+
           <div class="workflow-anchor-details" id="workflowAnchorDetails"></div>
+
+          <div class="workflow-phase-timeline" id="workflowPhaseTimeline" aria-label="ATT&amp;CK phase timeline"></div>
+
           <div class="workflow-phase-placeholder is-hidden" id="workflowPhasePlaceholder">
             <div class="workflow-empty-card">
               <p class="eyebrow">Chain overview</p>
               <h3>Select a phase to inspect details</h3>
-              <p>Use the ordered ATT&CK chain above to pick a phase. We will surface its likely upstream/downstream techniques, parallel options, and contextual entities.</p>
+              <p>Use the ordered ATT&amp;CK chain above to pick a phase. We will surface its likely upstream/downstream techniques, parallel options, and contextual entities.</p>
             </div>
           </div>
           <div class="workflow-phase-list is-hidden" id="workflowPhaseList" aria-live="polite"></div>
+
           <div class="workflow-empty-state" id="workflowEmptyState">
             <div class="workflow-empty-card">
               <p class="eyebrow">Ready for analysis</p>
-              <h3>Search an ATT&CK technique to generate a kill chain</h3>
+              <h3>Search an ATT&amp;CK technique to generate a kill chain</h3>
               <p>For example, try <strong>T1566 Phishing</strong> or <strong>T1059 Command and Scripting Interpreter</strong>. The workflow will align the technique with its tactic phase(s), show likely upstream/downstream steps, and highlight the threat entities that use those paths.</p>
             </div>
           </div>
         </div>
+
+        <div id="graphSearchMount"></div>
         <div class="graph-stage">
-          <div class="top-controls">
-            <div class="search-field">
-              <label class="input-field" for="search">
-                <span class="sr-only">Search ATT&CK ID or name</span>
-                <input
-                  id="search"
-                  type="text"
-                  placeholder="Search ATT&CK ID or name..."
-                  autocomplete="off"
-                  aria-autocomplete="list"
-                  aria-expanded="false"
-                  aria-owns="searchSuggestions"
-                />
-                <span class="input-icon">&#8984;K</span>
-              </label>
-              <div class="search-suggestions is-hidden" id="searchSuggestions" role="listbox"></div>
-            </div>
-            <div class="command-actions">
-              <button id="resetView" class="ghost-btn has-icon" aria-label="Reset graph view" title="Reset graph view">
-                <span class="icon-dot" aria-hidden="true">&#8635;</span>
-                <span class="sr-only">Reset</span>
-              </button>
-              <button id="contextToggle" class="ghost-btn has-icon" aria-pressed="false">
-                <span class="icon-dot">&#9681;</span>
-                <span>Context</span>
-              </button>
-            </div>
-          </div>
           <p id="status" class="status-chip status-chip-floating">Loading graph...</p>
           <div id="cy"></div>
         </div>
@@ -277,4 +364,3 @@
   <script type="module" src="main.js"></script>
 </body>
 </html>
-
