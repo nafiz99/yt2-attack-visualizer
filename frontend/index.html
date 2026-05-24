@@ -5,9 +5,11 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>YT2 ATT&CK Graph Viewer</title>
 
-  <link rel="stylesheet" href="styles.css?v=27" />
+  <link rel="stylesheet" href="styles.css?v=53" />
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:wght@400;500&display=swap" />
   <script src="https://unpkg.com/cytoscape/dist/cytoscape.min.js"></script>
+  <script src="https://unpkg.com/cytoscape-navigator/cytoscape-navigator.js"></script>
+  <link rel="stylesheet" href="https://unpkg.com/cytoscape-navigator/cytoscape-navigator.css" />
 </head>
 
 <body>
@@ -44,6 +46,7 @@
         </button>
       </div>
 
+      <!-- VIEW TABS -->
       <p class="rail-label">View</p>
       <nav class="rail-tabs" id="modeTabs" role="tablist" aria-label="View mode">
         <button type="button" class="mode-tab active" data-mode="workflow" role="tab" aria-selected="true">
@@ -53,6 +56,21 @@
           Graph
         </button>
       </nav>
+
+      <!-- DOMAIN FILTER — shared by both tabs, always visible -->
+      <div class="sidebar-section domain-section" id="domainSection">
+        <p class="rail-label">Domain</p>
+        <div class="domain-btn-group">
+          <select id="domainFilter" class="domain-select-hidden" aria-label="Domain filter">
+            <option value="enterprise-attack" selected>Enterprise</option>
+            <option value="mobile-attack">Mobile</option>
+            <option value="ics-attack">ICS</option>
+          </select>
+          <button type="button" class="domain-btn is-active" data-domain="enterprise-attack">Enterprise</button>
+          <button type="button" class="domain-btn" data-domain="mobile-attack">Mobile</button>
+          <button type="button" class="domain-btn" data-domain="ics-attack">ICS</button>
+        </div>
+      </div>
 
       <!-- GRAPH-ONLY SECTIONS -->
       <div class="sidebar-section focus-section" id="graphViewControlSection">
@@ -76,42 +94,24 @@
           </select>
         </label>
         <div class="nav-history-row">
-          <button
-            id="navBack"
-            type="button"
-            class="nav-history-btn"
-            aria-label="Go back to previous node"
-            title="Back"
-            disabled
-          >
+          <button id="navBack" type="button" class="nav-history-btn" aria-label="Go back" title="Back" disabled>
             <span class="material-symbols-rounded" aria-hidden="true">arrow_back</span>
-            <span>Back</span>
           </button>
-          <button
-            id="navForward"
-            type="button"
-            class="nav-history-btn"
-            aria-label="Go forward to next node"
-            title="Forward"
-            disabled
-          >
-            <span>Forward</span>
+          <button id="navForward" type="button" class="nav-history-btn" aria-label="Go forward" title="Forward" disabled>
             <span class="material-symbols-rounded" aria-hidden="true">arrow_forward</span>
+          </button>
+          <button id="resetView" type="button" class="nav-history-btn" aria-label="Reset all controls" title="Reset all controls">
+            <span class="material-symbols-rounded" aria-hidden="true">restart_alt</span>
           </button>
         </div>
       </div>
+
+      <!-- GRAPH FILTERS -->
       <div class="sidebar-section filters-section" id="graphFiltersSection">
         <p class="rail-label">Filters</p>
-        <div class="filter-grid">
-          <label class="chip-field" for="domainFilter">
-            <span>Domain</span>
-            <select id="domainFilter" aria-label="Domain filter">
-              <option value="all">All Domains</option>
-              <option value="enterprise-attack">Enterprise</option>
-              <option value="mobile-attack">Mobile</option>
-              <option value="ics-attack">ICS</option>
-            </select>
-          </label>
+
+        <!-- BASIC filters — always visible -->
+        <div class="filter-group">
           <label class="chip-field" for="focusFilter">
             <span>Signal</span>
             <select id="focusFilter" aria-label="Signal filter">
@@ -124,20 +124,60 @@
             <span>Phase</span>
             <select id="phaseFilter" aria-label="Phase filter">
               <option value="all">All Phases</option>
-              <option value="reconnaissance">Reconnaissance</option>
-              <option value="resource-development">Resource Development</option>
-              <option value="initial-access">Initial Access</option>
-              <option value="execution">Execution</option>
-              <option value="persistence">Persistence</option>
-              <option value="privilege-escalation">Privilege Escalation</option>
-              <option value="defense-evasion">Defense Evasion</option>
-              <option value="credential-access">Credential Access</option>
-              <option value="discovery">Discovery</option>
-              <option value="lateral-movement">Lateral Movement</option>
-              <option value="collection">Collection</option>
-              <option value="command-and-control">Command &amp; Control</option>
-              <option value="exfiltration">Exfiltration</option>
-              <option value="impact">Impact</option>
+              <optgroup label="Enterprise">
+                <option value="reconnaissance">Reconnaissance</option>
+                <option value="resource-development">Resource Development</option>
+                <option value="initial-access">Initial Access</option>
+                <option value="execution">Execution</option>
+                <option value="persistence">Persistence</option>
+                <option value="privilege-escalation">Privilege Escalation</option>
+                <option value="defense-evasion">Defense Evasion</option>
+                <option value="credential-access">Credential Access</option>
+                <option value="discovery">Discovery</option>
+                <option value="lateral-movement">Lateral Movement</option>
+                <option value="collection">Collection</option>
+                <option value="command-and-control">Command &amp; Control</option>
+                <option value="exfiltration">Exfiltration</option>
+                <option value="impact">Impact</option>
+              </optgroup>
+              <optgroup label="ICS Only">
+                <option value="evasion">Evasion</option>
+                <option value="inhibit-response-function">Inhibit Response Function</option>
+                <option value="impair-process-control">Impair Process Control</option>
+              </optgroup>
+            </select>
+          </label>
+        </div>
+
+        <!-- ADVANCED filters — collapsible -->
+        <button type="button" class="filter-advanced-toggle" id="graphAdvancedToggle" aria-expanded="false">
+          <span>Advanced</span>
+          <span class="filter-advanced-arrow">▾</span>
+        </button>
+        <div class="filter-advanced-body is-hidden" id="graphAdvancedBody">
+          <label class="chip-field" for="platformFilter">
+            <span>Platform</span>
+            <select id="platformFilter" aria-label="Platform filter">
+              <option value="all">All</option>
+              <optgroup label="Desktop / Server">
+                <option value="Windows">Windows</option>
+                <option value="Linux">Linux</option>
+                <option value="macOS">macOS</option>
+                <option value="Containers">Containers</option>
+                <option value="ESXi">ESXi</option>
+                <option value="Network Devices">Network Devices</option>
+              </optgroup>
+              <optgroup label="Cloud / SaaS">
+                <option value="IaaS">IaaS</option>
+                <option value="SaaS">SaaS</option>
+                <option value="Office Suite">Office Suite</option>
+                <option value="Identity Provider">Identity Provider</option>
+                <option value="PRE">PRE</option>
+              </optgroup>
+              <optgroup label="Mobile">
+                <option value="Android">Android</option>
+                <option value="iOS">iOS</option>
+              </optgroup>
             </select>
           </label>
           <label class="chip-field" for="sortOrder">
@@ -163,8 +203,9 @@
       <!-- WORKFLOW-ONLY SECTION -->
       <div class="sidebar-section workflow-controls-section is-hidden" id="workflowControlsSection">
         <p class="rail-label">Workflow</p>
-        <div class="filter-grid">
 
+        <!-- BASIC workflow filters -->
+        <div class="filter-group">
           <label class="chip-field" for="wfFullChainToggle">
             <span>Chain</span>
             <select id="wfFullChainToggle" aria-label="Show full chain">
@@ -172,7 +213,6 @@
               <option value="full">Full chain</option>
             </select>
           </label>
-
           <label class="chip-field" for="wfCardLimitSelect">
             <span>Cards / phase</span>
             <select id="wfCardLimitSelect" aria-label="Cards per phase">
@@ -181,7 +221,20 @@
               <option value="8">8</option>
             </select>
           </label>
+          <label class="chip-field chip-field--wide" for="wfActorSelect">
+            <span>Actor profile</span>
+            <select id="wfActorSelect" aria-label="Threat actor profile">
+              <option value="">— Select actor —</option>
+            </select>
+          </label>
+        </div>
 
+        <!-- ADVANCED workflow filters -->
+        <button type="button" class="filter-advanced-toggle" id="wfAdvancedToggle" aria-expanded="false">
+          <span>Advanced</span>
+          <span class="filter-advanced-arrow">▾</span>
+        </button>
+        <div class="filter-advanced-body is-hidden" id="wfAdvancedBody">
           <label class="chip-field" for="wfPhaseReachSelect">
             <span>Phase reach</span>
             <select id="wfPhaseReachSelect" aria-label="Phase reach">
@@ -190,7 +243,6 @@
               <option value="6">Wide (±6)</option>
             </select>
           </label>
-
           <label class="chip-field" for="wfContextChipsToggle">
             <span>Context chips</span>
             <select id="wfContextChipsToggle" aria-label="Show context chips">
@@ -198,7 +250,6 @@
               <option value="off">Hidden</option>
             </select>
           </label>
-
           <label class="chip-field" for="wfCardDetailSelect">
             <span>Card detail</span>
             <select id="wfCardDetailSelect" aria-label="Card detail level">
@@ -206,29 +257,10 @@
               <option value="compact">Compact</option>
             </select>
           </label>
-
-          <label class="chip-field chip-field--wide" for="wfActorSelect">
-            <span>Actor profile</span>
-            <select id="wfActorSelect" aria-label="Threat actor profile">
-              <option value="">— Select actor —</option>
-            </select>
-          </label>
-
         </div>
       </div>
 
-      <div class="rail-footer">
-        <button
-          id="resetView"
-          type="button"
-          class="tertiary-btn"
-          aria-label="Reset all controls"
-          title="Reset all controls"
-        >
-          <span class="icon-dot" aria-hidden="true">&#8635;</span>
-          <span>Reset All</span>
-        </button>
-      </div>
+      <div class="rail-footer"></div>
     </aside>
 
     <div id="left" class="workspace">
@@ -283,7 +315,8 @@
 
           <div id="workflowSearchMount" class="workflow-search-slot">
             <div class="canvas-search top-controls" id="canvasSearchControls">
-              <div class="search-field">
+              <!-- Expanded input -->
+              <div class="search-field" id="searchFieldWrap">
                 <label class="input-field" for="search">
                   <span class="sr-only">Search ATT&CK ID or name</span>
                   <input
@@ -315,13 +348,7 @@
 
           <div class="workflow-phase-timeline" id="workflowPhaseTimeline" aria-label="ATT&amp;CK phase timeline"></div>
 
-          <div class="workflow-phase-placeholder is-hidden" id="workflowPhasePlaceholder">
-            <div class="workflow-empty-card">
-              <p class="eyebrow">Chain overview</p>
-              <h3>Select a phase to inspect details</h3>
-              <p>Use the ordered ATT&amp;CK chain above to pick a phase. We will surface its likely upstream/downstream techniques, parallel options, and contextual entities.</p>
-            </div>
-          </div>
+
           <div class="workflow-phase-list is-hidden" id="workflowPhaseList" aria-live="polite"></div>
 
           <div class="workflow-empty-state" id="workflowEmptyState">
@@ -333,10 +360,43 @@
           </div>
         </div>
 
+        <!-- "Who Uses This?" floating panel -->
+        <div id="whoUsesPanel" class="who-uses-panel is-hidden" role="dialog" aria-label="Who uses this technique" aria-modal="false">
+          <div class="who-uses-header">
+            <div>
+              <p class="who-uses-title"></p>
+              <p class="who-uses-subtitle"></p>
+            </div>
+            <button type="button" class="who-uses-close" id="whoUsesPanelClose" aria-label="Close">
+              <span class="material-symbols-rounded">close</span>
+            </button>
+          </div>
+          <div class="who-uses-body" id="whoUsesPanelBody"></div>
+        </div>
+
         <div id="graphSearchMount"></div>
         <div class="graph-stage">
           <p id="status" class="status-chip status-chip-floating">Loading graph...</p>
           <div id="cy"></div>
+          <div id="node-info-card" class="node-info-card is-hidden" aria-hidden="true"></div>
+          <button
+            id="graphFullscreenBtn"
+            type="button"
+            class="graph-fullscreen-btn"
+            aria-label="Enter fullscreen"
+            title="Fullscreen"
+          >
+            <svg id="graphFullscreenIcon" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+              <polyline points="15 3 21 3 21 9"></polyline>
+              <polyline points="9 21 3 21 3 15"></polyline>
+              <line x1="21" y1="3" x2="14" y2="10"></line>
+              <line x1="3" y1="21" x2="10" y2="14"></line>
+            </svg>
+          </button>
+          <div id="minimap-wrapper">
+            <div id="minimap-label">Overview</div>
+            <div id="minimap"></div>
+          </div>
         </div>
       </section>
     </div>
@@ -361,6 +421,6 @@
     <div id="detailsOverlay" class="details-overlay is-hidden" role="presentation" aria-hidden="true"></div>
   </div>
 
-  <script type="module" src="main.js"></script>
+  <script type="module" src="main.js?v=71"></script>
 </body>
 </html>

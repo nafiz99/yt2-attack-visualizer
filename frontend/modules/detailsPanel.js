@@ -144,16 +144,28 @@ export function formatValueChips(values = [], emptyCopy = "None") {
     .join("")}</div>`;
 }
 
+function cleanDescription(text) {
+  if (!text) return text;
+  // Remove (Citation: ...) markers
+  let out = text.replace(/\(Citation:[^)]*\)/g, "");
+  // Remove bare Markdown links [label](url) → label
+  out = out.replace(/\[([^\]]+)\]\([^)]+\)/g, "$1");
+  // Collapse runs of whitespace left behind
+  out = out.replace(/\s{2,}/g, " ").trim();
+  return out;
+}
+
 export function buildDescriptionBlock(descriptionText) {
-  const fallbackText = descriptionText || "No description available.";
-  const hasExpandable = descriptionText && descriptionText.length > 220;
-  const shortDescription = hasExpandable ? `${descriptionText.slice(0, 220)}...` : fallbackText;
+  const cleaned = cleanDescription(descriptionText);
+  const fallbackText = cleaned || "No description available.";
+  const hasExpandable = cleaned && cleaned.length > 220;
+  const shortDescription = hasExpandable ? `${cleaned.slice(0, 220)}...` : fallbackText;
   return `
     <div class="description-card${hasExpandable ? " expandable" : ""}" ${
     hasExpandable ? 'data-action="toggle-description" aria-expanded="false"' : ""
   }>
       <p class="description-preview${hasExpandable ? "" : " full"}">${shortDescription}</p>
-      <p class="description-full ${hasExpandable ? "collapsed" : "expanded"}">${fallbackText}</p>
+      <p class="description-full ${hasExpandable ? "collapsed" : "expanded"}">${cleaned || fallbackText}</p>
       ${hasExpandable ? '<span class="description-hint">Click to read the full description</span>' : ""}
     </div>
   `;
@@ -179,7 +191,8 @@ export function buildBadge(type, labelOverride = null) {
 
 export function truncateText(text, limit = 200) {
   if (!text) return "No description available.";
-  return text.length > limit ? `${text.slice(0, limit)}...` : text;
+  const clean = cleanDescription(text);
+  return clean.length > limit ? `${clean.slice(0, limit)}...` : clean;
 }
 
 export function formatIsoDate(value) {
@@ -269,7 +282,7 @@ export function buildWorkflowContextChips(techId) {
 
 // --- Detail Renderers ---
 
-export function renderTechniqueDetails(nodeData, nodeId) {
+export function renderTechniqueDetails(nodeData, nodeId, { openPanel = true } = {}) {
   const techniqueData = state.techniqueMap[nodeId] || state.nodeMap[nodeId];
   const { parents, children } = getHierarchyInfo(nodeId);
   const tactics = getTacticsForTechnique(nodeId);
@@ -326,10 +339,10 @@ export function renderTechniqueDetails(nodeData, nodeId) {
       ${formatProcedurePreviewList(contextInfo.procedures || [])}
     </div>
   `;
-  openDetailsPanel();
+  if (openPanel) openDetailsPanel();
 }
 
-export function renderTacticDetails(nodeData, nodeId) {
+export function renderTacticDetails(nodeData, nodeId, { openPanel = true } = {}) {
   const tacticData = state.tacticMap[nodeId] || state.nodeMap[nodeId];
   const techniques = getTechniquesForTactic(nodeId);
   const descriptionText = tacticData.description || "No description available.";
@@ -350,10 +363,10 @@ export function renderTacticDetails(nodeData, nodeId) {
     <div class="label">Description</div>
     ${buildDescriptionBlock(descriptionText)}
   `;
-  openDetailsPanel();
+  if (openPanel) openDetailsPanel();
 }
 
-export function renderGroupDetails(nodeData, nodeId) {
+export function renderGroupDetails(nodeData, nodeId, { openPanel = true } = {}) {
   const record = state.entityData.group[nodeId] || nodeData;
   if (!record) { closeDetailsPanel(); return; }
   detailsContainer.innerHTML = `
@@ -384,10 +397,10 @@ export function renderGroupDetails(nodeData, nodeId) {
     <div class="label">Description</div>
     ${buildDescriptionBlock(record.description)}
   `;
-  openDetailsPanel();
+  if (openPanel) openDetailsPanel();
 }
 
-export function renderMalwareDetails(nodeData, nodeId) {
+export function renderMalwareDetails(nodeData, nodeId, { openPanel = true } = {}) {
   const record = state.entityData.malware[nodeId] || nodeData;
   if (!record) { closeDetailsPanel(); return; }
   detailsContainer.innerHTML = `
@@ -418,10 +431,10 @@ export function renderMalwareDetails(nodeData, nodeId) {
     <div class="label">Description</div>
     ${buildDescriptionBlock(record.description)}
   `;
-  openDetailsPanel();
+  if (openPanel) openDetailsPanel();
 }
 
-export function renderCampaignDetails(nodeData, nodeId) {
+export function renderCampaignDetails(nodeData, nodeId, { openPanel = true } = {}) {
   const record = state.entityData.campaign[nodeId] || nodeData;
   if (!record) { closeDetailsPanel(); return; }
   const timeline = [formatIsoDate(record.first_seen), formatIsoDate(record.last_seen)].filter(Boolean);
@@ -453,10 +466,10 @@ export function renderCampaignDetails(nodeData, nodeId) {
     <div class="label">Description</div>
     ${buildDescriptionBlock(record.description)}
   `;
-  openDetailsPanel();
+  if (openPanel) openDetailsPanel();
 }
 
-export function renderProcedureDetails(nodeData, nodeId) {
+export function renderProcedureDetails(nodeData, nodeId, { openPanel = true } = {}) {
   const record = state.entityData.procedure[nodeId] || nodeData;
   if (!record) { closeDetailsPanel(); return; }
 
@@ -508,5 +521,5 @@ export function renderProcedureDetails(nodeData, nodeId) {
     <div class="label">Citations</div>
     <div class="value-block">${formatCitations(record.external_references || [])}</div>
   `;
-  openDetailsPanel();
+  if (openPanel) openDetailsPanel();
 }

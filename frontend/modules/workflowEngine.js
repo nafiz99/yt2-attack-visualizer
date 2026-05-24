@@ -4,8 +4,33 @@
 import {
   state,
   WORKFLOW_TACTIC_SEQUENCE,
-  WORKFLOW_PHASE_LOOKUP,
 } from "./state.js";
+
+// --- Domain-aware phase helpers ---
+
+/** Returns only the phases that belong to the currently active domain. */
+function getActiveDomainSequence() {
+  const domain = state.activeDomainFilter || "enterprise-attack";
+  return WORKFLOW_TACTIC_SEQUENCE.filter(p => p.domain === domain);
+}
+
+/**
+ * Returns a shortname → phase map for the active domain only.
+ * Each phase carries a `localIndex` (0-based position within that domain's sequence).
+ */
+function getActiveDomainPhaseLookup() {
+  const seq = getActiveDomainSequence();
+  const lookup = {};
+  seq.forEach((p, i) => {
+    if (!lookup[p.shortname]) lookup[p.shortname] = { ...p, localIndex: i };
+  });
+  return lookup;
+}
+
+/** Clear the per-technique phase cache — must be called whenever the active domain changes. */
+export function clearTechniquePhaseLookup() {
+  Object.keys(state.techniquePhaseLookup).forEach(k => delete state.techniquePhaseLookup[k]);
+}
 import { setIconButtonLabel, updateStatusChipText } from "./ui.js";
 import { getTacticsForTechnique } from "./graphQueries.js";
 import {
@@ -17,9 +42,9 @@ import {
   getTechniqueContextCounts,
   summarizeContextCounts,
   summarizeEntitySupport,
-} from "./detailsPanel.js";
+} from "./detailsPanel.js?v=39";
 // setActiveMode is imported from graphRenderer — circular but safe (only called inside functions)
-import { setActiveMode } from "./graphRenderer.js";
+import { setActiveMode } from "./graphRenderer.js?v=67";
 
 const RECENT_ANCHORS_KEY = "yt2_recent_anchors";
 const RECENT_ANCHORS_MAX = 8;
@@ -61,25 +86,49 @@ export function renderRecentAnchors() {
   }
   section?.classList.remove("is-hidden");
   container.innerHTML = anchors.map(a => `
-    <button class="recent-anchor-chip" type="button"
-            data-recent-anchor-id="${a.techId}"
-            title="${a.name}">
-      <span class="recent-id">${a.attack_id}</span>
-      <span class="recent-name">${a.name}</span>
-    </button>
+    <div class="recent-anchor-wrap">
+      <button class="recent-anchor-chip" type="button"
+              data-recent-anchor-id="${a.techId}"
+              title="${a.name}">
+        <span class="recent-id">${a.attack_id}</span>
+        <span class="recent-name">${a.name}</span>
+      </button>
+      <button class="recent-anchor-remove" type="button"
+              data-remove-anchor-id="${a.techId}"
+              aria-label="Remove ${a.name} from recent"
+              title="Remove">
+        <span class="material-symbols-rounded" aria-hidden="true">close</span>
+      </button>
+    </div>
   `).join("");
+
+  // Remove-chip handler
+  container.querySelectorAll(".recent-anchor-remove").forEach(btn => {
+    btn.addEventListener("click", e => {
+      e.stopPropagation();
+      const id = btn.dataset.removeAnchorId;
+      const updated = loadRecentAnchors().filter(a => a.techId !== id);
+      try { localStorage.setItem(RECENT_ANCHORS_KEY, JSON.stringify(updated)); } catch {}
+      renderRecentAnchors();
+    });
+  });
 }
 
 // --- Tactic Metadata Hydration ---
 
 export function hydrateWorkflowTacticMetadata() {
   WORKFLOW_TACTIC_SEQUENCE.forEach(phase => {
-    const tacticRecord = state.tacticShortnameMap[phase.shortname];
+    // Try to find a tactic record that matches both shortname and domain;
+    // fall back to shortname-only match for backwards compatibility.
+    const allTactics = Object.values(state.tacticMap);
+    const tacticRecord =
+      allTactics.find(t => t.shortname === phase.shortname && (t.domains || []).includes(phase.domain)) ||
+      state.tacticShortnameMap[phase.shortname];
     if (tacticRecord) {
-      phase.tactic_id = tacticRecord.stix_id;
-      phase.attack_id = tacticRecord.attack_id;
-      phase.description = tacticRecord.description;
-      phase.label = tacticRecord.name || phase.label;
+      phase.tactic_id  = tacticRecord.stix_id;
+      phase.attack_id  = tacticRecord.attack_id;
+      phase.description= tacticRecord.description;
+      phase.label      = tacticRecord.name || phase.label;
     }
   });
 }
@@ -108,12 +157,14 @@ export function getTechniquePhaseInfo(techId, depth = 0) {
     return state.techniquePhaseLookup[techId];
   }
 
+  const domainLookup = getActiveDomainPhaseLookup();
+
   const rawPhases = (technique.kill_chain_phases || [])
     .map(phase => (phase.phase_name || "").toLowerCase())
     .filter(Boolean)
-    .map(name => WORKFLOW_PHASE_LOOKUP[name])
+    .map(name => domainLookup[name])
     .filter(Boolean)
-    .sort((a, b) => a.index - b.index);
+    .sort((a, b) => a.localIndex - b.localIndex);
 
   let phases = rawPhases;
   if (!phases.length && technique.is_subtechnique && depth < 3) {
@@ -124,9 +175,9 @@ export function getTechniquePhaseInfo(techId, depth = 0) {
   if (!phases.length) {
     const tacticNodes = getTacticsForTechnique(techId);
     phases = (tacticNodes || [])
-      .map(node => (node && node.shortname ? WORKFLOW_PHASE_LOOKUP[node.shortname] : null))
+      .map(node => (node && node.shortname ? domainLookup[node.shortname] : null))
       .filter(Boolean)
-      .sort((a, b) => a.index - b.index);
+      .sort((a, b) => a.localIndex - b.localIndex);
   }
 
   const dedupedPhases = [];
@@ -341,10 +392,12 @@ export function renderWorkflowTimeline(activePhases) {
   const activeSet = new Set(state.workflowTimelineHighlights.map(phase => phase.shortname));
   const hasHighlights = activeSet.size > 0;
   const shouldShowFullChain = state.workflowTimelineExpanded || !hasHighlights;
+  // Always restrict to the active domain so Enterprise/Mobile/ICS phases don't bleed into each other
+  const domainSeq = getActiveDomainSequence();
   let phasesToRender = shouldShowFullChain
-    ? WORKFLOW_TACTIC_SEQUENCE
-    : WORKFLOW_TACTIC_SEQUENCE.filter(phase => activeSet.has(phase.shortname));
-  if (!phasesToRender.length) phasesToRender = WORKFLOW_TACTIC_SEQUENCE;
+    ? domainSeq
+    : domainSeq.filter(phase => activeSet.has(phase.shortname));
+  if (!phasesToRender.length) phasesToRender = domainSeq;
 
   const markup = phasesToRender
     .map((phase, index) => {
@@ -353,8 +406,8 @@ export function renderWorkflowTimeline(activePhases) {
       const classes = ["timeline-phase"];
       if (isActive) classes.push("is-active");
       if (isSelected) classes.push("is-selected");
-      const rawIndex = Number.isFinite(phase.index) ? phase.index + 1 : index + 1;
-      const number = String(rawIndex).padStart(2, "0");
+      // Use loop index (domain-local position) so numbering always starts at 01 per domain
+      const number = String(index + 1).padStart(2, "0");
       const arrow =
         index < phasesToRender.length - 1
           ? `<span class="timeline-arrow" aria-hidden="true">
@@ -448,8 +501,9 @@ export function renderWorkflowView() {
   });
   renderWorkflowPhaseDetails();
 
+  // Refresh panel content if already open; never force-open it on filter/search changes
   const detailNodeId = anchorTechnique?.stix_id || anchorTechnique?.id;
-  if (detailNodeId) renderTechniqueDetails(anchorTechnique, detailNodeId);
+  if (detailNodeId) renderTechniqueDetails(anchorTechnique, detailNodeId, { openPanel: state.isDetailsPanelOpen });
   updateStatusChipText(
     `Workflow anchored on ${anchorTechnique.attack_id || ""} ${anchorTechnique.name}`
   );
@@ -491,27 +545,32 @@ export function renderWorkflowPhaseDetails() {
 
 export function buildWorkflowPhaseModel(anchorId, anchorEntry) {
   anchorEntry = anchorEntry || ensureWorkflowTechnique(anchorId);
+  const domainSeq = getActiveDomainSequence();
+
   let anchorPhases = anchorEntry.phases || [];
   if (!anchorPhases.length) {
-    const fallbackIndex = Number.isFinite(anchorEntry.primaryIndex) ? anchorEntry.primaryIndex : 0;
-    const fallbackPhase = WORKFLOW_TACTIC_SEQUENCE[fallbackIndex] || WORKFLOW_TACTIC_SEQUENCE[0];
+    // Fall back to first phase in the active domain
+    const fallbackPhase = domainSeq[0] || WORKFLOW_TACTIC_SEQUENCE[0];
     anchorPhases = fallbackPhase ? [fallbackPhase] : [];
     anchorEntry.phases = anchorPhases;
   }
 
-  const anchorPhaseIndices = anchorPhases.length ? anchorPhases.map(p => p.index) : [0];
-  const minAnchor = Math.min(...anchorPhaseIndices);
-  const maxAnchor = Math.max(...anchorPhaseIndices);
+  // Use localIndex (position within domain) for before/after comparisons
+  const anchorLocalIndices = anchorPhases
+    .map(p => (Number.isFinite(p.localIndex) ? p.localIndex : domainSeq.findIndex(d => d.shortname === p.shortname)))
+    .filter(i => i >= 0);
+  const minAnchor = anchorLocalIndices.length ? Math.min(...anchorLocalIndices) : 0;
+  const anchorShortnames = new Set(anchorPhases.map(p => p.shortname));
+
   const neighbors = {
     predecessors: buildNeighborArray(anchorEntry.predecessors),
     successors: buildNeighborArray(anchorEntry.successors),
     parallels: buildNeighborArray(anchorEntry.parallels),
   };
 
-  return WORKFLOW_TACTIC_SEQUENCE.map(phase => {
-    const idx = phase.index;
-    const isAnchorPhase = anchorPhaseIndices.includes(idx);
-    const state_ = isAnchorPhase ? "anchor" : idx < minAnchor ? "before" : "after";
+  return domainSeq.map((phase, localIdx) => {
+    const isAnchorPhase = anchorShortnames.has(phase.shortname);
+    const state_ = isAnchorPhase ? "anchor" : localIdx < minAnchor ? "before" : "after";
     const column = {
       phase,
       state: state_,
@@ -525,7 +584,7 @@ export function buildWorkflowPhaseModel(anchorId, anchorEntry) {
     if (isAnchorPhase) {
       column.anchorTechniques.push(createTechniqueWorkflowModel(anchorId, "anchor"));
       column.parallels = neighbors.parallels
-        .filter(item => item.phaseInfo.phases.some(p => p.index === idx))
+        .filter(item => item.phaseInfo.phases.some(p => p.shortname === phase.shortname))
         .slice(0, state.workflowCardLimit)
         .map(item => createTechniqueWorkflowModel(item.techId, "parallel", item.bucket))
         .filter(Boolean);
@@ -533,7 +592,7 @@ export function buildWorkflowPhaseModel(anchorId, anchorEntry) {
 
     if (state_ === "before") {
       column.preceding = neighbors.predecessors
-        .filter(item => item.phaseInfo.phases.some(p => p.index === idx))
+        .filter(item => item.phaseInfo.phases.some(p => p.shortname === phase.shortname))
         .slice(0, state.workflowCardLimit)
         .map(item => createTechniqueWorkflowModel(item.techId, "preceding", item.bucket))
         .filter(Boolean);
@@ -541,7 +600,7 @@ export function buildWorkflowPhaseModel(anchorId, anchorEntry) {
 
     if (state_ === "after") {
       column.succeeding = neighbors.successors
-        .filter(item => item.phaseInfo.phases.some(p => p.index === idx))
+        .filter(item => item.phaseInfo.phases.some(p => p.shortname === phase.shortname))
         .slice(0, state.workflowCardLimit)
         .map(item => createTechniqueWorkflowModel(item.techId, "succeeding", item.bucket))
         .filter(Boolean);
@@ -710,7 +769,11 @@ function renderWorkflowTechniqueCard(model) {
        </div>`;
 
   return `
-    <article class="workflow-tech-card${isCompact ? " workflow-tech-card--compact" : ""}" data-tech-id="${model.techId}">
+    <article
+      class="workflow-tech-card${isCompact ? " workflow-tech-card--compact" : ""}"
+      data-tech-id="${model.techId}"
+      data-show-details-id="${model.techId}"
+    >
       <header>
         <h5>${technique.name}</h5>
         <span class="attack-id">${technique.attack_id || ""}</span>
@@ -736,25 +799,37 @@ export function setThreatActorProfile(groupId) {
   state.activeWorkflowTechniqueId = null;
   state.activeWorkflowPhaseIndex = null;
 
-  // Build { shortname: [techId, ...] } map
+  // Build { shortname: [techId, ...] } map — direct group techniques + campaign-attributed techniques
   const phaseMap = {};
-  (group.techniques || []).forEach(tech => {
-    if (!tech.stix_id) return;
-    const phaseInfo = getTechniquePhaseInfo(tech.stix_id);
+  const addTech = (stix_id) => {
+    if (!stix_id) return;
+    const phaseInfo = getTechniquePhaseInfo(stix_id);
     phaseInfo.phases.forEach(phase => {
       if (!phaseMap[phase.shortname]) phaseMap[phase.shortname] = [];
-      if (!phaseMap[phase.shortname].includes(tech.stix_id))
-        phaseMap[phase.shortname].push(tech.stix_id);
+      if (!phaseMap[phase.shortname].includes(stix_id))
+        phaseMap[phase.shortname].push(stix_id);
     });
+  };
+
+  (group.techniques || []).forEach(tech => addTech(tech.stix_id));
+
+  // Include techniques from campaigns attributed to this group
+  Object.values(state.entityData.campaign || {}).forEach(campaign => {
+    const linkedToGroup = (campaign.groups || []).some(g => g.stix_id === group.stix_id);
+    if (!linkedToGroup) return;
+    (campaign.techniques || []).forEach(tech => addTech(tech.stix_id));
   });
+
   state.actorPhaseMap = phaseMap;
+
+  const totalTechs = new Set(Object.values(phaseMap).flat()).size;
 
   // Clear search input
   const searchInput = document.getElementById("search");
   if (searchInput) searchInput.value = "";
 
   renderWorkflowView();
-  updateStatusChipText(`Actor profile: ${group.name} · ${(group.techniques || []).length} techniques`);
+  updateStatusChipText(`Actor profile: ${group.name} · ${totalTechs} techniques`);
 }
 
 export function clearThreatActorProfile() {
@@ -787,7 +862,7 @@ function _renderActorProfileView() {
 
 function _buildActorAnchorCard(group, phaseMap) {
   const phaseCoverage = Object.keys(phaseMap).filter(k => phaseMap[k].length).length;
-  const techCount = (group.techniques || []).length;
+  const techCount = new Set(Object.values(phaseMap).flat()).size;
   const attackId = group.attack_id || "";
   const aliases = (group.aliases || []).filter(a => a !== group.name).slice(0, 3).join(", ");
   return `
@@ -809,11 +884,12 @@ function _buildActorAnchorCard(group, phaseMap) {
 
 function _renderActorTimeline(phaseMap) {
   if (!workflowTimeline) return;
-  const counts = WORKFLOW_TACTIC_SEQUENCE.map(p => (phaseMap[p.shortname] || []).length);
+  const domainSequence = getActiveDomainSequence();
+  const counts = domainSequence.map(p => (phaseMap[p.shortname] || []).length);
   const maxCount = Math.max(...counts, 1);
 
-  workflowTimeline.innerHTML = WORKFLOW_TACTIC_SEQUENCE.map(phase => {
-    const count = counts[phase.index];
+  workflowTimeline.innerHTML = domainSequence.map((phase, localIdx) => {
+    const count = counts[localIdx];
     const isSelected = state.activeWorkflowPhaseIndex === phase.index;
     const classes = ["timeline-phase"];
     if (count > 0) {
@@ -821,7 +897,7 @@ function _renderActorTimeline(phaseMap) {
       classes.push(`actor-intensity-${Math.ceil((count / maxCount) * 3)}`); // 1–3
     }
     if (isSelected) classes.push("is-selected");
-    const number = String(phase.index + 1).padStart(2, "0");
+    const number = String(localIdx + 1).padStart(2, "0");
     return `
       <div class="timeline-item">
         <div class="${classes.join(" ")}"
@@ -872,4 +948,108 @@ function _renderActorPhaseDetails(phaseMap) {
       </div>
     </div>
   `;
+}
+
+// --- "Who Uses This?" Panel ---
+
+const whoUsesPanel     = document.getElementById("whoUsesPanel");
+const whoUsesPanelBody = document.getElementById("whoUsesPanelBody");
+
+export function showWhoUsesPanel(techId, anchorEl) {
+  if (!whoUsesPanel || !whoUsesPanelBody) return;
+
+  const tech      = state.techniqueMap[techId];
+  const context   = state.techniqueContextIndex[techId] || {};
+  // Each entry is { id: stix_id, label: name, attack_id }
+  const groups    = context.groups    || [];
+  const malware   = context.malware   || [];
+  const campaigns = context.campaigns || [];
+
+  const titleEl    = whoUsesPanel.querySelector(".who-uses-title");
+  const subtitleEl = whoUsesPanel.querySelector(".who-uses-subtitle");
+  if (titleEl)    titleEl.textContent = tech?.name || techId;
+  if (subtitleEl) subtitleEl.textContent = tech?.attack_id || "";
+
+  const sortedGroups    = [...groups].sort((a, b) => (a.label || "").localeCompare(b.label || ""));
+  const sortedMalware   = [...malware].sort((a, b) => (a.label || "").localeCompare(b.label || ""));
+  const sortedCampaigns = [...campaigns].sort((a, b) => (a.label || "").localeCompare(b.label || ""));
+
+  const rows = [];
+
+  sortedGroups.slice(0, 8).forEach(entry => {
+    if (!entry?.label) return;
+    rows.push(
+      `<button type="button" class="who-uses-row" data-actor-profile-id="${entry.id}">` +
+        `<span class="who-uses-badge who-uses-badge--group">Group</span>` +
+        `<span class="who-uses-name">${entry.label}</span>` +
+        `<span class="who-uses-id">${entry.attack_id || ""}</span>` +
+      `</button>`
+    );
+  });
+
+  sortedMalware.slice(0, 6).forEach(entry => {
+    if (!entry?.label) return;
+    rows.push(
+      `<div class="who-uses-row who-uses-row--static">` +
+        `<span class="who-uses-badge who-uses-badge--malware">Malware</span>` +
+        `<span class="who-uses-name">${entry.label}</span>` +
+        `<span class="who-uses-id">${entry.attack_id || ""}</span>` +
+      `</div>`
+    );
+  });
+
+  sortedCampaigns.slice(0, 4).forEach(entry => {
+    if (!entry?.label) return;
+    rows.push(
+      `<div class="who-uses-row who-uses-row--static">` +
+        `<span class="who-uses-badge who-uses-badge--campaign">Campaign</span>` +
+        `<span class="who-uses-name">${entry.label}</span>` +
+        `<span class="who-uses-id">${entry.attack_id || ""}</span>` +
+      `</div>`
+    );
+  });
+
+  if (!rows.length) {
+    whoUsesPanelBody.innerHTML = `<p class="who-uses-empty">No recorded usage data for this technique.</p>`;
+  } else {
+    const total = groups.length + malware.length + campaigns.length;
+    const overflowNote = total > rows.length
+      ? `<p class="who-uses-overflow">Showing ${rows.length} of ${total} — open Details for full list</p>`
+      : "";
+    whoUsesPanelBody.innerHTML = rows.join("") + overflowNote;
+  }
+
+  whoUsesPanel.classList.remove("is-hidden");
+
+  const rect = anchorEl ? anchorEl.getBoundingClientRect() : null;
+  if (rect) {
+    const panelW = whoUsesPanel.offsetWidth  || 300;
+    const panelH = whoUsesPanel.offsetHeight || 320;
+    const margin = 12;
+    const vw = window.innerWidth;
+    const vh = window.innerHeight;
+
+    // Prefer right of card; fall back to left; then just clamp inside viewport
+    let left = rect.right + 10;
+    if (left + panelW > vw - margin) left = rect.left - panelW - 10;
+    left = Math.max(margin, Math.min(left, vw - panelW - margin));
+
+    let top = rect.top;
+    if (top + panelH > vh - margin) top = vh - panelH - margin;
+    top = Math.max(margin, top);
+
+    whoUsesPanel.style.left      = left + "px";
+    whoUsesPanel.style.top       = top  + "px";
+    whoUsesPanel.style.transform = "";
+  } else {
+    whoUsesPanel.style.left      = "50%";
+    whoUsesPanel.style.top       = "50%";
+    whoUsesPanel.style.transform = "translate(-50%,-50%)";
+  }
+}
+
+export function hideWhoUsesPanel() {
+  if (!whoUsesPanel) return;
+  whoUsesPanel.classList.add("is-hidden");
+  whoUsesPanel.style.transform = "";
 }

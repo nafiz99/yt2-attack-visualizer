@@ -26,9 +26,10 @@ export const state = {
   useContextEntities: false,
 
   // Filter / sort / layout state
-  activeDomainFilter: "all",
+  activeDomainFilter: "enterprise-attack",
   activeFocusFilter: "balanced",
   activePhaseFilter: "all",
+  activePlatformFilter: "all",
   activeSortOrder: "phase",
   activeLayoutPreset: "cose",
   nodeSampleLimit: 60,
@@ -63,8 +64,8 @@ export const state = {
   // Theme
   currentTheme: "dark",
 
-  // Details panel
-  detailsPanelManuallyHidden: false,
+  // Details panel — starts hidden; opens only when a node is explicitly selected
+  detailsPanelManuallyHidden: true,
   isDetailsPanelOpen: false,
 
   // Search
@@ -102,24 +103,54 @@ export const NODE_TYPE_TO_MODE = {
 };
 
 export const WORKFLOW_TACTIC_SEQUENCE = [
-  { shortname: "reconnaissance", label: "Reconnaissance" },
-  { shortname: "resource-development", label: "Resource Development" },
-  { shortname: "initial-access", label: "Initial Access" },
-  { shortname: "execution", label: "Execution" },
-  { shortname: "persistence", label: "Persistence" },
-  { shortname: "privilege-escalation", label: "Privilege Escalation" },
-  { shortname: "defense-evasion", label: "Defense Evasion" },
-  { shortname: "credential-access", label: "Credential Access" },
-  { shortname: "discovery", label: "Discovery" },
-  { shortname: "lateral-movement", label: "Lateral Movement" },
-  { shortname: "collection", label: "Collection" },
-  { shortname: "command-and-control", label: "Command and Control" },
-  { shortname: "exfiltration", label: "Exfiltration" },
-  { shortname: "impact", label: "Impact" },
+  // Enterprise (ordered by kill-chain phase)
+  { shortname: "reconnaissance",          label: "Reconnaissance",          domain: "enterprise-attack" },
+  { shortname: "resource-development",    label: "Resource Development",    domain: "enterprise-attack" },
+  { shortname: "initial-access",          label: "Initial Access",          domain: "enterprise-attack" },
+  { shortname: "execution",               label: "Execution",               domain: "enterprise-attack" },
+  { shortname: "persistence",             label: "Persistence",             domain: "enterprise-attack" },
+  { shortname: "privilege-escalation",    label: "Privilege Escalation",    domain: "enterprise-attack" },
+  { shortname: "defense-evasion",         label: "Defense Evasion",         domain: "enterprise-attack" },
+  { shortname: "credential-access",       label: "Credential Access",       domain: "enterprise-attack" },
+  { shortname: "discovery",               label: "Discovery",               domain: "enterprise-attack" },
+  { shortname: "lateral-movement",        label: "Lateral Movement",        domain: "enterprise-attack" },
+  { shortname: "collection",              label: "Collection",              domain: "enterprise-attack" },
+  { shortname: "command-and-control",     label: "Command and Control",     domain: "enterprise-attack" },
+  { shortname: "exfiltration",            label: "Exfiltration",            domain: "enterprise-attack" },
+  { shortname: "impact",                  label: "Impact",                  domain: "enterprise-attack" },
+  // Mobile (TA002x / TA003x / TA004x)
+  { shortname: "initial-access",          label: "Initial Access",          domain: "mobile-attack" },
+  { shortname: "execution",               label: "Execution",               domain: "mobile-attack" },
+  { shortname: "persistence",             label: "Persistence",             domain: "mobile-attack" },
+  { shortname: "privilege-escalation",    label: "Privilege Escalation",    domain: "mobile-attack" },
+  { shortname: "defense-evasion",         label: "Defense Evasion",         domain: "mobile-attack" },
+  { shortname: "credential-access",       label: "Credential Access",       domain: "mobile-attack" },
+  { shortname: "discovery",               label: "Discovery",               domain: "mobile-attack" },
+  { shortname: "lateral-movement",        label: "Lateral Movement",        domain: "mobile-attack" },
+  { shortname: "collection",              label: "Collection",              domain: "mobile-attack" },
+  { shortname: "command-and-control",     label: "Command and Control",     domain: "mobile-attack" },
+  { shortname: "exfiltration",            label: "Exfiltration",            domain: "mobile-attack" },
+  { shortname: "impact",                  label: "Impact",                  domain: "mobile-attack" },
+  // ICS (TA01xx)
+  { shortname: "initial-access",          label: "Initial Access",          domain: "ics-attack" },
+  { shortname: "execution",               label: "Execution",               domain: "ics-attack" },
+  { shortname: "persistence",             label: "Persistence",             domain: "ics-attack" },
+  { shortname: "privilege-escalation",    label: "Privilege Escalation",    domain: "ics-attack" },
+  { shortname: "discovery",               label: "Discovery",               domain: "ics-attack" },
+  { shortname: "lateral-movement",        label: "Lateral Movement",        domain: "ics-attack" },
+  { shortname: "collection",              label: "Collection",              domain: "ics-attack" },
+  { shortname: "command-and-control",     label: "Command and Control",     domain: "ics-attack" },
+  { shortname: "evasion",                 label: "Evasion",                 domain: "ics-attack" },
+  { shortname: "inhibit-response-function", label: "Inhibit Response Function", domain: "ics-attack" },
+  { shortname: "impair-process-control",  label: "Impair Process Control",  domain: "ics-attack" },
+  { shortname: "impact",                  label: "Impact",                  domain: "ics-attack" },
 ].map((entry, index) => ({ ...entry, index }));
 
+// Keyed by shortname — first occurrence wins so enterprise takes priority for
+// shared names (initial-access, execution, etc.). ICS-unique tactics get their
+// own entries because no enterprise tactic shares their shortname.
 export const WORKFLOW_PHASE_LOOKUP = WORKFLOW_TACTIC_SEQUENCE.reduce((acc, phase) => {
-  acc[phase.shortname] = phase;
+  if (!acc[phase.shortname]) acc[phase.shortname] = phase;
   return acc;
 }, {});
 

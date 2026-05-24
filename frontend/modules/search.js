@@ -5,9 +5,8 @@ import { state } from "./state.js";
 import { getTechniqueDomains } from "./graphQueries.js";
 // Note: applySearchSuggestion calls setWorkflowAnchor (workflowEngine) and focusNodeById (graphRenderer).
 // These are circular imports that work fine because calls happen inside function bodies.
-import { setWorkflowAnchor } from "./workflowEngine.js";
-import { focusNodeById } from "./graphRenderer.js";
-import { getTechniquePhaseInfo } from "./workflowEngine.js";
+import { setWorkflowAnchor, getTechniquePhaseInfo } from "./workflowEngine.js?v=46";
+import { focusNodeById } from "./graphRenderer.js?v=67";
 
 const searchSuggestionsContainer = document.getElementById("searchSuggestions");
 
@@ -23,6 +22,13 @@ export function matchesPhaseFilter(techId) {
   const info = getTechniquePhaseInfo(techId);
   if (!info || !Array.isArray(info.phases) || !info.phases.length) return false;
   return info.phases.some(phase => phase.shortname === state.activePhaseFilter);
+}
+
+export function matchesPlatformFilter(techId) {
+  if (state.activePlatformFilter === "all" || !techId) return true;
+  const record = state.techniqueMap[techId];
+  if (!record || !Array.isArray(record.platforms) || !record.platforms.length) return false;
+  return record.platforms.some(p => p.toLowerCase() === state.activePlatformFilter.toLowerCase());
 }
 
 // --- Sort Helpers ---
@@ -152,7 +158,8 @@ export function collectSearchSuggestions(normalizedQuery) {
         tech =>
           matchesTechniqueQuery(tech, normalizedQuery) &&
           matchesDomainFilter(tech.stix_id) &&
-          matchesPhaseFilter(tech.stix_id)
+          matchesPhaseFilter(tech.stix_id) &&
+          matchesPlatformFilter(tech.stix_id)
       )
       .slice(0, 8)
       .map(tech => ({
@@ -174,7 +181,7 @@ export function collectSearchSuggestions(normalizedQuery) {
     .filter(node => {
       if (!matchesNodeQuery(node, normalizedQuery)) return false;
       if (node.node_type === "technique") {
-        return matchesPhaseFilter(node.id) && matchesDomainFilter(node.id);
+        return matchesPhaseFilter(node.id) && matchesDomainFilter(node.id) && matchesPlatformFilter(node.id);
       }
       return true;
     })

@@ -2031,9 +2031,19 @@
         "name": "Masquerade File Type"
       },
       {
+        "stix_id": "attack-pattern--24a9253e-8948-4c98-b751-8e2aee53127c",
+        "attack_id": "T0807",
+        "name": "Command-Line Interface"
+      },
+      {
         "stix_id": "attack-pattern--2959d63f-73fd-46a1-abd2-109d7dcede32",
         "attack_id": "T1543.003",
         "name": "Windows Service"
+      },
+      {
+        "stix_id": "attack-pattern--2dc2b567-8821-49f9-9045-8740f3d0b958",
+        "attack_id": "T0853",
+        "name": "Scripting"
       },
       {
         "stix_id": "attack-pattern--4eb28bed-d11a-4641-9863-c2ac017d910a",
@@ -2081,9 +2091,19 @@
         "name": "Obfuscated Files or Information"
       },
       {
+        "stix_id": "attack-pattern--ba203963-3182-41ac-af14-7e7ebc83cd61",
+        "attack_id": "T0849",
+        "name": "Masquerading"
+      },
+      {
         "stix_id": "attack-pattern--bf90d72c-c00b-45e3-b3aa-68560560d4c5",
         "attack_id": "T1570",
         "name": "Lateral Tool Transfer"
+      },
+      {
+        "stix_id": "attack-pattern--cd2c76a4-5e23-4ca5-9c40-d5e0604f7101",
+        "attack_id": "T0859",
+        "name": "Valid Accounts"
       },
       {
         "stix_id": "attack-pattern--d1fcf083-a721-4223-aedf-bf8960798d62",
@@ -2111,9 +2131,19 @@
         "name": "Create Account"
       },
       {
+        "stix_id": "attack-pattern--e1f9cdd2-9511-4fca-90d7-f3e92cfdd0bf",
+        "attack_id": "T0886",
+        "name": "Remote Services"
+      },
+      {
         "stix_id": "attack-pattern--e358d692-23c0-4a31-9eb6-ecc13a8d7735",
         "attack_id": "T1018",
         "name": "Remote System Discovery"
+      },
+      {
+        "stix_id": "attack-pattern--ead7bd34-186e-4c79-9a4d-b65bcce6ed9d",
+        "attack_id": "T0867",
+        "name": "Lateral Tool Transfer"
       },
       {
         "stix_id": "attack-pattern--f9e9365a-9ca2-4d9c-8e7c-050d73d1101a",
@@ -2303,6 +2333,11 @@
     ],
     "techniques": [
       {
+        "stix_id": "attack-pattern--008b8f56-6107-48be-aa9f-746f927dbb61",
+        "attack_id": "T0803",
+        "name": "Block Command Message"
+      },
+      {
         "stix_id": "attack-pattern--045d0922-2310-4e60-b5e4-3302302cb3c5",
         "attack_id": "T1218.011",
         "name": "Rundll32"
@@ -2318,9 +2353,29 @@
         "name": "External Remote Services"
       },
       {
+        "stix_id": "attack-pattern--1af9e3fd-2bcc-414d-adbd-fe3b95c02ca1",
+        "attack_id": "T0831",
+        "name": "Manipulation of Control"
+      },
+      {
+        "stix_id": "attack-pattern--1b22b676-9347-4c55-9a35-ef0dc653db5b",
+        "attack_id": "T0814",
+        "name": "Denial of Service"
+      },
+      {
+        "stix_id": "attack-pattern--1c478716-71d9-46a4-9a53-fa5d576adb60",
+        "attack_id": "T0805",
+        "name": "Block Serial COM"
+      },
+      {
         "stix_id": "attack-pattern--232b7f21-adf9-4b42-b936-b9d6f7df856e",
         "attack_id": "T1204.002",
         "name": "Malicious File"
+      },
+      {
+        "stix_id": "attack-pattern--25dfc8ad-bd73-4dfd-84a9-3c3d383f76e9",
+        "attack_id": "T0816",
+        "name": "Device Restart/Shutdown"
       },
       {
         "stix_id": "attack-pattern--2e34237d-8574-43f6-aace-ae2915de8597",
@@ -2333,6 +2388,16 @@
         "name": "Network Sniffing"
       },
       {
+        "stix_id": "attack-pattern--3f1f4ccb-9be2-4ff8-8f69-dd972221169b",
+        "attack_id": "T0804",
+        "name": "Block Reporting Message"
+      },
+      {
+        "stix_id": "attack-pattern--40b300ba-f553-48bf-862e-9471b220d455",
+        "attack_id": "T0855",
+        "name": "Unauthorized Command Message"
+      },
+      {
         "stix_id": "attack-pattern--43e7dc91-05b2-474c-b9ac-2ed4fe101f4d",
         "attack_id": "T1055",
         "name": "Process Injection"
@@ -2343,9 +2408,24 @@
         "name": "Modify Registry"
       },
       {
+        "stix_id": "attack-pattern--63b6942d-8359-4506-bfb3-cf87aa8120ee",
+        "attack_id": "T0828",
+        "name": "Loss of Productivity and Revenue"
+      },
+      {
         "stix_id": "attack-pattern--7610cada-1499-41a4-b3dd-46467b68d177",
         "attack_id": "T1136.002",
         "name": "Domain Account"
+      },
+      {
+        "stix_id": "attack-pattern--8d2f3bab-507c-4424-b58b-edc977bd215c",
+        "attack_id": "T0822",
+        "name": "External Remote Services"
+      },
+      {
+        "stix_id": "attack-pattern--a81696ef-c106-482c-8f80-59c30f2569fb",
+        "attack_id": "T0827",
+        "name": "Loss of Control"
       },
       {
         "stix_id": "attack-pattern--ac08589e-ee59-4935-8667-d845e38fe579",
@@ -2353,9 +2433,24 @@
         "name": "Disable or Modify Tools"
       },
       {
+        "stix_id": "attack-pattern--b0628bfc-5376-4a38-9182-f324501cb4cf",
+        "attack_id": "T0823",
+        "name": "Graphical User Interface"
+      },
+      {
         "stix_id": "attack-pattern--b17a1a56-e99c-403c-8948-561df0cffe81",
         "attack_id": "T1078",
         "name": "Valid Accounts"
+      },
+      {
+        "stix_id": "attack-pattern--b5b9bacb-97f2-4249-b804-47fd44de1f95",
+        "attack_id": "T0826",
+        "name": "Loss of Availability"
+      },
+      {
+        "stix_id": "attack-pattern--b9160e77-ea9e-4ba9-b1c8-53a3c466b13d",
+        "attack_id": "T0857",
+        "name": "System Firmware"
       },
       {
         "stix_id": "attack-pattern--bf90d72c-c00b-45e3-b3aa-68560560d4c5",
@@ -2363,9 +2458,24 @@
         "name": "Lateral Tool Transfer"
       },
       {
+        "stix_id": "attack-pattern--cd2c76a4-5e23-4ca5-9c40-d5e0604f7101",
+        "attack_id": "T0859",
+        "name": "Valid Accounts"
+      },
+      {
+        "stix_id": "attack-pattern--d5a69cfb-fc2a-46cb-99eb-74b236db5061",
+        "attack_id": "T0846",
+        "name": "Remote System Discovery"
+      },
+      {
         "stix_id": "attack-pattern--d63a3fb8-9452-4e9d-a60a-54be68d5998c",
         "attack_id": "T1070.004",
         "name": "File Deletion"
+      },
+      {
+        "stix_id": "attack-pattern--d67adac8-e3b9-44f9-9e6d-6c2a7d69dbe4",
+        "attack_id": "T0884",
+        "name": "Connection Proxy"
       },
       {
         "stix_id": "attack-pattern--df8b2a25-8bdf-4856-953c-a04372b1c161",
@@ -2378,6 +2488,16 @@
         "name": "Visual Basic"
       },
       {
+        "stix_id": "attack-pattern--e1f9cdd2-9511-4fca-90d7-f3e92cfdd0bf",
+        "attack_id": "T0886",
+        "name": "Remote Services"
+      },
+      {
+        "stix_id": "attack-pattern--e33c7ecc-5a38-497f-beb2-a9a2049a4c20",
+        "attack_id": "T0813",
+        "name": "Denial of Control"
+      },
+      {
         "stix_id": "attack-pattern--e358d692-23c0-4a31-9eb6-ecc13a8d7735",
         "attack_id": "T1018",
         "name": "Remote System Discovery"
@@ -2386,6 +2506,16 @@
         "stix_id": "attack-pattern--e6919abc-99f9-4c6c-95a5-14761e7b2add",
         "attack_id": "T1105",
         "name": "Ingress Tool Transfer"
+      },
+      {
+        "stix_id": "attack-pattern--e6c31185-8040-4267-83d3-b217b8a92f07",
+        "attack_id": "T0885",
+        "name": "Commonly Used Port"
+      },
+      {
+        "stix_id": "attack-pattern--ead7bd34-186e-4c79-9a4d-b65bcce6ed9d",
+        "attack_id": "T0867",
+        "name": "Lateral Tool Transfer"
       }
     ],
     "groups": [
@@ -2578,6 +2708,11 @@
         "name": "Spearphishing Attachment"
       },
       {
+        "stix_id": "attack-pattern--32063d7f-0a39-440d-a4a3-2694488f96cc",
+        "attack_id": "T1646",
+        "name": "Exfiltration Over C2 Channel"
+      },
+      {
         "stix_id": "attack-pattern--3ccef7ae-cb5e-48f6-8302-897105fbf55c",
         "attack_id": "T1140",
         "name": "Deobfuscate/Decode Files or Information"
@@ -2613,6 +2748,16 @@
         "name": "Exploitation for Client Execution"
       },
       {
+        "stix_id": "attack-pattern--c6421411-ae61-42bb-9098-73fddb315002",
+        "attack_id": "T1636.004",
+        "name": "SMS Messages"
+      },
+      {
+        "stix_id": "attack-pattern--cf28ca46-1fd3-46b4-b1f6-ec0b72361848",
+        "attack_id": "T1420",
+        "name": "File and Directory Discovery"
+      },
+      {
         "stix_id": "attack-pattern--d742a578-d70e-4d0e-96a6-02a9c30204e6",
         "attack_id": "T1189",
         "name": "Drive-by Compromise"
@@ -2626,6 +2771,11 @@
         "stix_id": "attack-pattern--dfd7cc1d-e1d8-4394-a198-97c4cab8aa67",
         "attack_id": "T1059.005",
         "name": "Visual Basic"
+      },
+      {
+        "stix_id": "attack-pattern--e1c912a9-e305-434b-9172-8a6ce3ec9c4a",
+        "attack_id": "T1533",
+        "name": "Data from Local System"
       },
       {
         "stix_id": "attack-pattern--e3b6daca-e963-4a69-aee6-ed4fd653ad58",
@@ -5996,6 +6146,26 @@
         "name": "Scheduled Task"
       },
       {
+        "stix_id": "attack-pattern--1c5cf58c-a34a-40d7-82f4-f987cdfc2b91",
+        "attack_id": "T0894",
+        "name": "System Binary Proxy Execution"
+      },
+      {
+        "stix_id": "attack-pattern--24a9253e-8948-4c98-b751-8e2aee53127c",
+        "attack_id": "T0807",
+        "name": "Command-Line Interface"
+      },
+      {
+        "stix_id": "attack-pattern--2dc2b567-8821-49f9-9045-8740f3d0b958",
+        "attack_id": "T0853",
+        "name": "Scripting"
+      },
+      {
+        "stix_id": "attack-pattern--40b300ba-f553-48bf-862e-9471b220d455",
+        "attack_id": "T0855",
+        "name": "Unauthorized Command Message"
+      },
+      {
         "stix_id": "attack-pattern--4fe28b27-b13c-453e-a386-c2ef362a573b",
         "attack_id": "T1572",
         "name": "Protocol Tunneling"
@@ -6009,6 +6179,11 @@
         "stix_id": "attack-pattern--5d2be8b9-d24c-4e98-83bf-2f5f79477163",
         "attack_id": "T1484.001",
         "name": "Group Policy Modification"
+      },
+      {
+        "stix_id": "attack-pattern--77d9c726-b53e-481d-8bcc-1068aebfbb9d",
+        "attack_id": "T0895",
+        "name": "Autorun Image"
       },
       {
         "stix_id": "attack-pattern--7bdca9d5-d500-4d7d-8c52-5fd47baf4c0c",
@@ -6345,6 +6520,31 @@
         "name": "Malware"
       },
       {
+        "stix_id": "attack-pattern--24a9253e-8948-4c98-b751-8e2aee53127c",
+        "attack_id": "T0807",
+        "name": "Command-Line Interface"
+      },
+      {
+        "stix_id": "attack-pattern--2dc2b567-8821-49f9-9045-8740f3d0b958",
+        "attack_id": "T0853",
+        "name": "Scripting"
+      },
+      {
+        "stix_id": "attack-pattern--40b300ba-f553-48bf-862e-9471b220d455",
+        "attack_id": "T0855",
+        "name": "Unauthorized Command Message"
+      },
+      {
+        "stix_id": "attack-pattern--53a26eee-1080-4d17-9762-2027d5a1b805",
+        "attack_id": "T0872",
+        "name": "Indicator Removal on Host"
+      },
+      {
+        "stix_id": "attack-pattern--63b6942d-8359-4506-bfb3-cf87aa8120ee",
+        "attack_id": "T0828",
+        "name": "Loss of Productivity and Revenue"
+      },
+      {
         "stix_id": "attack-pattern--65f2d882-3f41-4d48-8a06-29af77ec9f90",
         "attack_id": "T1003.001",
         "name": "LSASS Memory"
@@ -6365,6 +6565,11 @@
         "name": "PowerShell"
       },
       {
+        "stix_id": "attack-pattern--9a505987-ab05-4f46-a9a6-6441442eec3b",
+        "attack_id": "T0830",
+        "name": "Adversary-in-the-Middle"
+      },
+      {
         "stix_id": "attack-pattern--a2fdce72-04b2-409a-ac10-cc1695f4fce0",
         "attack_id": "T1588.002",
         "name": "Tool"
@@ -6378,6 +6583,26 @@
         "stix_id": "attack-pattern--b8902400-e6c5-4ba2-95aa-2d35b442b118",
         "attack_id": "T1573",
         "name": "Encrypted Channel"
+      },
+      {
+        "stix_id": "attack-pattern--be69c571-d746-4b1f-bdd0-c0c9817e9068",
+        "attack_id": "T0843",
+        "name": "Program Download"
+      },
+      {
+        "stix_id": "attack-pattern--cd2c76a4-5e23-4ca5-9c40-d5e0604f7101",
+        "attack_id": "T0859",
+        "name": "Valid Accounts"
+      },
+      {
+        "stix_id": "attack-pattern--e1f9cdd2-9511-4fca-90d7-f3e92cfdd0bf",
+        "attack_id": "T0886",
+        "name": "Remote Services"
+      },
+      {
+        "stix_id": "attack-pattern--ead7bd34-186e-4c79-9a4d-b65bcce6ed9d",
+        "attack_id": "T0867",
+        "name": "Lateral Tool Transfer"
       }
     ],
     "groups": [
@@ -6385,6 +6610,13 @@
         "stix_id": "intrusion-set--9538b1a4-4120-4e2d-bf59-3b11fcab05a4",
         "attack_id": "G0088",
         "name": "TEMP.Veles"
+      }
+    ],
+    "malware": [
+      {
+        "stix_id": "malware--80099a91-4c86-4bea-9ccb-dac55d61960e",
+        "attack_id": "S1009",
+        "name": "Triton"
       }
     ]
   },
@@ -6406,6 +6638,16 @@
       "enterprise-attack"
     ],
     "techniques": [
+      {
+        "stix_id": "attack-pattern--097924ce-a9a9-4039-8591-e0deedfb8722",
+        "attack_id": "T0836",
+        "name": "Modify Parameter"
+      },
+      {
+        "stix_id": "attack-pattern--138979ba-0430-4de6-a128-2fc0b056ba36",
+        "attack_id": "T0829",
+        "name": "Loss of View"
+      },
       {
         "stix_id": "attack-pattern--1644e709-12d2-41e5-a60f-3470991f5011",
         "attack_id": "T1003.002",
@@ -6430,6 +6672,23 @@
         "stix_id": "attack-pattern--824add00-99a1-4b15-9a2d-6c5683b7b497",
         "attack_id": "T1562.010",
         "name": "Downgrade Attack"
+      },
+      {
+        "stix_id": "attack-pattern--b5b9bacb-97f2-4249-b804-47fd44de1f95",
+        "attack_id": "T0826",
+        "name": "Loss of Availability"
+      },
+      {
+        "stix_id": "attack-pattern--b9160e77-ea9e-4ba9-b1c8-53a3c466b13d",
+        "attack_id": "T0857",
+        "name": "System Firmware"
+      }
+    ],
+    "malware": [
+      {
+        "stix_id": "malware--b34df04a-9d30-4d84-a03f-0d536ee19a05",
+        "attack_id": "S1165",
+        "name": "FrostyGoop"
       }
     ]
   },
@@ -6739,6 +6998,108 @@
       "mobile-attack",
       "enterprise-attack"
     ],
+    "techniques": [
+      {
+        "stix_id": "attack-pattern--114fed8b-7eed-4136-8b9c-411c5c7fff4b",
+        "attack_id": "T1655.001",
+        "name": "Match Legitimate Name or Location"
+      },
+      {
+        "stix_id": "attack-pattern--198ce408-1470-45ee-b47f-7056050d4fc2",
+        "attack_id": "T1418",
+        "name": "Software Discovery"
+      },
+      {
+        "stix_id": "attack-pattern--1d1b1558-c833-482e-aabb-d07ef6eae63d",
+        "attack_id": "T1636.002",
+        "name": "Call Log"
+      },
+      {
+        "stix_id": "attack-pattern--2282a98b-5049-4f61-9381-55baca7c1add",
+        "attack_id": "T1437.001",
+        "name": "Web Protocols"
+      },
+      {
+        "stix_id": "attack-pattern--2aa78dfd-cb6f-4c70-9408-137cfd96be49",
+        "attack_id": "T1629.003",
+        "name": "Disable or Modify Tools"
+      },
+      {
+        "stix_id": "attack-pattern--2bb20118-e6c0-41dc-a07c-283ea4dd0fb8",
+        "attack_id": "T1544",
+        "name": "Ingress Tool Transfer"
+      },
+      {
+        "stix_id": "attack-pattern--32063d7f-0a39-440d-a4a3-2694488f96cc",
+        "attack_id": "T1646",
+        "name": "Exfiltration Over C2 Channel"
+      },
+      {
+        "stix_id": "attack-pattern--3775a580-a1d1-46c4-8147-c614a715f2e9",
+        "attack_id": "T1624.001",
+        "name": "Broadcast Receivers"
+      },
+      {
+        "stix_id": "attack-pattern--39dd7871-f59b-495f-a9a5-3cb8cc50c9b2",
+        "attack_id": "T1517",
+        "name": "Access Notifications"
+      },
+      {
+        "stix_id": "attack-pattern--6683aa0c-d98a-4f5b-ac57-ca7e9934a760",
+        "attack_id": "T1429",
+        "name": "Audio Capture"
+      },
+      {
+        "stix_id": "attack-pattern--99e6295e-741b-4857-b6e5-64989eb039b4",
+        "attack_id": "T1430",
+        "name": "Location Tracking"
+      },
+      {
+        "stix_id": "attack-pattern--bb4387ab-7a51-468b-bf5f-a9a8612f0303",
+        "attack_id": "T1521.001",
+        "name": "Symmetric Cryptography"
+      },
+      {
+        "stix_id": "attack-pattern--c6421411-ae61-42bb-9098-73fddb315002",
+        "attack_id": "T1636.004",
+        "name": "SMS Messages"
+      },
+      {
+        "stix_id": "attack-pattern--cf28ca46-1fd3-46b4-b1f6-ec0b72361848",
+        "attack_id": "T1420",
+        "name": "File and Directory Discovery"
+      },
+      {
+        "stix_id": "attack-pattern--d13fa042-8f26-44e1-a2a8-af0bf8e2ac9a",
+        "attack_id": "T1406",
+        "name": "Obfuscated Files or Information"
+      },
+      {
+        "stix_id": "attack-pattern--dd818ea5-adf5-41c7-93b5-f3b839a219fb",
+        "attack_id": "T1421",
+        "name": "System Network Connections Discovery"
+      },
+      {
+        "stix_id": "attack-pattern--e0b9ecb8-a7d1-43c7-aa30-8e19c6a92c86",
+        "attack_id": "T1636.003",
+        "name": "Contact List"
+      },
+      {
+        "stix_id": "attack-pattern--e2ea7f6b-8d4f-49c3-819d-660530d12b77",
+        "attack_id": "T1426",
+        "name": "System Information Discovery"
+      },
+      {
+        "stix_id": "attack-pattern--e3b936a4-6321-4172-9114-038a866362ec",
+        "attack_id": "T1532",
+        "name": "Archive Collected Data"
+      },
+      {
+        "stix_id": "attack-pattern--fd339382-bfec-4bf0-8d47-1caedc9e7e57",
+        "attack_id": "T1456",
+        "name": "Drive-By Compromise"
+      }
+    ],
     "groups": [
       {
         "stix_id": "intrusion-set--efed95ba-d7e8-47ff-8c53-99c42426ee7c",
@@ -6752,6 +7113,289 @@
         "attack_id": "S0491",
         "name": "StrongPity"
       }
+    ]
+  },
+  {
+    "stix_id": "campaign--d0695b5f-b761-49e0-b3e3-2e5307f8def3",
+    "attack_id": "C0054",
+    "name": "Operation Triangulation",
+    "aliases": [
+      "Operation Triangulation"
+    ],
+    "description": "[Operation Triangulation](https://attack.mitre.org/campaigns/C0054) is a mobile campaign targeting iOS devices.(Citation: SecureList OpTriangulation 01Jun2023) The unidentified actors used zero-click exploits in iMessage attachments to gain [Initial Access](https://attack.mitre.org/tactics/TA0027), then executed exploits and validators, such as [Binary Validator](https://attack.mitre.org/software/S1215) before finally executing the [TriangleDB](https://attack.mitre.org/software/S1216) implant.  ",
+    "objective": null,
+    "first_seen": "2019-01-01T08:00:00.000Z",
+    "last_seen": "2023-06-01T07:00:00.000Z",
+    "created": "2025-03-28T14:45:30.132Z",
+    "modified": "2025-03-28T15:23:16.915Z",
+    "domains": [
+      "mobile-attack"
+    ],
+    "techniques": [
+      {
+        "stix_id": "attack-pattern--0d4e3bbb-7af5-4c88-a215-0c0906bc1e8d",
+        "attack_id": "T1630",
+        "name": "Indicator Removal on Host"
+      },
+      {
+        "stix_id": "attack-pattern--16d73b64-5681-4ea0-9af4-4ad86f7c96e8",
+        "attack_id": "T1521.002",
+        "name": "Asymmetric Cryptography"
+      },
+      {
+        "stix_id": "attack-pattern--198ce408-1470-45ee-b47f-7056050d4fc2",
+        "attack_id": "T1418",
+        "name": "Software Discovery"
+      },
+      {
+        "stix_id": "attack-pattern--1b51f5bc-b97a-498a-8dbd-bc6b1901bf19",
+        "attack_id": "T1424",
+        "name": "Process Discovery"
+      },
+      {
+        "stix_id": "attack-pattern--2bb20118-e6c0-41dc-a07c-283ea4dd0fb8",
+        "attack_id": "T1544",
+        "name": "Ingress Tool Transfer"
+      },
+      {
+        "stix_id": "attack-pattern--351c0927-2fc1-4a2c-ad84-cbbee7eb8172",
+        "attack_id": "T1404",
+        "name": "Exploitation for Privilege Escalation"
+      },
+      {
+        "stix_id": "attack-pattern--52eff1c7-dd30-4121-b762-24ae6fa61bbb",
+        "attack_id": "T1575",
+        "name": "Native API"
+      },
+      {
+        "stix_id": "attack-pattern--5abfc5e6-3c56-49e7-ad72-502d01acf28b",
+        "attack_id": "T1658",
+        "name": "Exploitation for Client Execution"
+      },
+      {
+        "stix_id": "attack-pattern--6683aa0c-d98a-4f5b-ac57-ca7e9934a760",
+        "attack_id": "T1429",
+        "name": "Audio Capture"
+      },
+      {
+        "stix_id": "attack-pattern--6a3f6490-9c44-40de-b059-e5940f246673",
+        "attack_id": "T1437",
+        "name": "Application Layer Protocol"
+      },
+      {
+        "stix_id": "attack-pattern--702055ac-4e54-4ae9-9527-e23a38e0b160",
+        "attack_id": "T1409",
+        "name": "Stored Application Data"
+      },
+      {
+        "stix_id": "attack-pattern--8605a0ec-b44a-4e98-a7fc-87d4bd3acb66",
+        "attack_id": "T1634.001",
+        "name": "Keychain"
+      },
+      {
+        "stix_id": "attack-pattern--99e6295e-741b-4857-b6e5-64989eb039b4",
+        "attack_id": "T1430",
+        "name": "Location Tracking"
+      },
+      {
+        "stix_id": "attack-pattern--ab7400b7-3476-4776-9545-ef3fa373de63",
+        "attack_id": "T1630.002",
+        "name": "File Deletion"
+      },
+      {
+        "stix_id": "attack-pattern--bb4387ab-7a51-468b-bf5f-a9a8612f0303",
+        "attack_id": "T1521.001",
+        "name": "Symmetric Cryptography"
+      },
+      {
+        "stix_id": "attack-pattern--c6421411-ae61-42bb-9098-73fddb315002",
+        "attack_id": "T1636.004",
+        "name": "SMS Messages"
+      },
+      {
+        "stix_id": "attack-pattern--cf28ca46-1fd3-46b4-b1f6-ec0b72361848",
+        "attack_id": "T1420",
+        "name": "File and Directory Discovery"
+      },
+      {
+        "stix_id": "attack-pattern--d4536441-1bcc-49fa-80ae-a596ed3f7ffd",
+        "attack_id": "T1422",
+        "name": "System Network Configuration Discovery"
+      },
+      {
+        "stix_id": "attack-pattern--e1c912a9-e305-434b-9172-8a6ce3ec9c4a",
+        "attack_id": "T1533",
+        "name": "Data from Local System"
+      },
+      {
+        "stix_id": "attack-pattern--e2ea7f6b-8d4f-49c3-819d-660530d12b77",
+        "attack_id": "T1426",
+        "name": "System Information Discovery"
+      }
+    ],
+    "malware": [
+      {
+        "stix_id": "malware--1393fb21-d09f-4ce8-96cf-1bcc9881765f",
+        "attack_id": "S1216",
+        "name": "TriangleDB"
+      },
+      {
+        "stix_id": "malware--b0a243dd-8075-42f9-86f6-64989600ed20",
+        "attack_id": "S1215",
+        "name": "Binary Validator"
+      }
+    ]
+  },
+  {
+    "stix_id": "campaign--70cab19e-1745-425e-b3db-c02cd5ff157a",
+    "attack_id": "C0020",
+    "name": "Maroochy Water Breach",
+    "aliases": [
+      "Maroochy Water Breach"
+    ],
+    "description": "[Maroochy Water Breach](https://attack.mitre.org/campaigns/C0020) was an incident in 2000 where an adversary leveraged the local government’s wastewater control system and stolen engineering equipment to disrupt and eventually release 800,000 liters of raw sewage into the local community.(Citation: Marshall Abrams July 2008)",
+    "objective": null,
+    "first_seen": "2000-02-01T05:00:00.000Z",
+    "last_seen": "2000-04-01T05:00:00.000Z",
+    "created": "2023-03-10T20:01:08.133Z",
+    "modified": "2025-04-16T21:26:23.900Z",
+    "domains": [
+      "ics-attack"
+    ],
+    "techniques": [
+      {
+        "stix_id": "attack-pattern--097924ce-a9a9-4039-8591-e0deedfb8722",
+        "attack_id": "T0836",
+        "name": "Modify Parameter"
+      },
+      {
+        "stix_id": "attack-pattern--2877063e-1851-48d2-bcc6-bc1d2733157e",
+        "attack_id": "T0860",
+        "name": "Wireless Compromise"
+      },
+      {
+        "stix_id": "attack-pattern--2900bbd8-308a-4274-b074-5b8bde8347bc",
+        "attack_id": "T0878",
+        "name": "Alarm Suppression"
+      },
+      {
+        "stix_id": "attack-pattern--35392fb4-a31d-4c6a-b9f2-1c65b7f5e6b9",
+        "attack_id": "T0864",
+        "name": "Transient Cyber Asset"
+      },
+      {
+        "stix_id": "attack-pattern--40b300ba-f553-48bf-862e-9471b220d455",
+        "attack_id": "T0855",
+        "name": "Unauthorized Command Message"
+      },
+      {
+        "stix_id": "attack-pattern--56ddc820-6cfb-407f-850b-52c035d123ac",
+        "attack_id": "T0815",
+        "name": "Denial of View"
+      },
+      {
+        "stix_id": "attack-pattern--83ebd22f-b401-4d59-8219-2294172cf916",
+        "attack_id": "T0879",
+        "name": "Damage to Property"
+      },
+      {
+        "stix_id": "attack-pattern--8535b71e-3c12-4258-a4ab-40257a1becc4",
+        "attack_id": "T0856",
+        "name": "Spoof Reporting Message"
+      },
+      {
+        "stix_id": "attack-pattern--8d2f3bab-507c-4424-b58b-edc977bd215c",
+        "attack_id": "T0822",
+        "name": "External Remote Services"
+      },
+      {
+        "stix_id": "attack-pattern--b14395bd-5419-4ef4-9bd8-696936f509bb",
+        "attack_id": "T0848",
+        "name": "Rogue Master"
+      },
+      {
+        "stix_id": "attack-pattern--e33c7ecc-5a38-497f-beb2-a9a2049a4c20",
+        "attack_id": "T0813",
+        "name": "Denial of Control"
+      },
+      {
+        "stix_id": "attack-pattern--e5de767e-f513-41cd-aa15-33f6ce5fbf92",
+        "attack_id": "T0838",
+        "name": "Modify Alarm Settings"
+      }
+    ]
+  },
+  {
+    "stix_id": "campaign--8fda050f-470d-4401-994e-35c1a6c301de",
+    "attack_id": "C0031",
+    "name": "Unitronics Defacement Campaign",
+    "aliases": [
+      "Unitronics Defacement Campaign"
+    ],
+    "description": "The [Unitronics Defacement Campaign](https://attack.mitre.org/campaigns/C0031) was a collection of intrusions across multiple sectors by the [CyberAv3ngers](https://attack.mitre.org/groups/G1027), where threat actors engaged in a seemingly opportunistic and global targeting and defacement of Unitronics Vision Series [Programmable Logic Controller (PLC)](https://attack.mitre.org/assets/A0003) with [Human-Machine Interface (HMI)](https://attack.mitre.org/assets/A0002). The sectors that these PLCs can be commonly found in are water and wastewater, energy, food and beverage manufacturing, and healthcare. The most notable feature of this attack was the defacement of the PLCs' HMIs.(Citation: CISA AA23-335A IRGC-Affiliated December 2023)(Citation: Frank Bajak and Marc Levy December 2023)",
+    "objective": null,
+    "first_seen": "2023-11-01T04:00:00.000Z",
+    "last_seen": "2023-11-01T04:00:00.000Z",
+    "created": "2024-03-25T19:58:53.090Z",
+    "modified": "2024-04-15T19:37:46.084Z",
+    "domains": [
+      "ics-attack"
+    ],
+    "techniques": [
+      {
+        "stix_id": "attack-pattern--138979ba-0430-4de6-a128-2fc0b056ba36",
+        "attack_id": "T0829",
+        "name": "Loss of View"
+      },
+      {
+        "stix_id": "attack-pattern--1b22b676-9347-4c55-9a35-ef0dc653db5b",
+        "attack_id": "T0814",
+        "name": "Denial of Service"
+      },
+      {
+        "stix_id": "attack-pattern--63b6942d-8359-4506-bfb3-cf87aa8120ee",
+        "attack_id": "T0828",
+        "name": "Loss of Productivity and Revenue"
+      },
+      {
+        "stix_id": "attack-pattern--8bb4538f-f16f-49f0-a431-70b5444c7349",
+        "attack_id": "T0812",
+        "name": "Default Credentials"
+      },
+      {
+        "stix_id": "attack-pattern--b5b9bacb-97f2-4249-b804-47fd44de1f95",
+        "attack_id": "T0826",
+        "name": "Loss of Availability"
+      },
+      {
+        "stix_id": "attack-pattern--f8df6b57-14bc-425f-9a91-6f59f6799307",
+        "attack_id": "T0883",
+        "name": "Internet Accessible Device"
+      }
+    ],
+    "groups": [
+      {
+        "stix_id": "intrusion-set--a07a367a-146c-45a8-a830-d3d337b9befa",
+        "attack_id": "G1027",
+        "name": "CyberAv3ngers"
+      }
+    ]
+  },
+  {
+    "stix_id": "campaign--65281d3e-b03c-46b8-8cd8-716363ac3cb2",
+    "attack_id": "C0009",
+    "name": "Oldsmar Treatment Plant Intrusion",
+    "aliases": [
+      "Oldsmar Treatment Plant Intrusion"
+    ],
+    "description": "[Oldsmar Treatment Plant Intrusion](https://attack.mitre.org/campaigns/C0009) was a cyber incident involving a water treatment facility in Florida. During this incident, unidentified threat actors leveraged features of the system to access and modify setpoints for a specific chemical required in the treatment process. The incident was detected immediately and prevented before it could cause any harm to the public.(Citation: Pinellas County Sheriffs Office February 2021)(Citation: CISA AA21-042A Water Treatment Intrusion Feb 2021)(Citation: Dragos Oldsmar Feb 2021)",
+    "objective": null,
+    "first_seen": "2021-02-01T05:00:00.000Z",
+    "last_seen": "2021-02-01T05:00:00.000Z",
+    "created": "2022-09-20T20:53:14.373Z",
+    "modified": "2025-04-18T18:00:54.375Z",
+    "domains": [
+      "ics-attack"
     ]
   }
 ]

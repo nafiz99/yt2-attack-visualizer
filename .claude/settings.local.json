@@ -3,7 +3,10 @@
     "allow": [
       "mcp__Claude_Preview__preview_start",
       "Bash(node --input-type=module)",
-      "WebFetch(domain:github.com)"
+      "WebFetch(domain:github.com)",
+      "Bash(node -e ':*)",
+      "Bash(node scripts/convert_dashboard_csv.js)",
+      "Bash(python3 -c ' *)"
     ]
   }
 }

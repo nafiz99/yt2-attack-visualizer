@@ -1,7 +1,7 @@
 // main.js
 // Application bootstrapper: loads data, initialises all modules, registers event listeners.
 
-import { state, LAYOUT_PRESETS } from "./modules/state.js";
+import { state, LAYOUT_PRESETS, MODE_NODE_TYPES } from "./modules/state.js";
 import { loadAllData } from "./modules/dataLoader.js";
 import {
   updateModeTabsUI,
@@ -10,7 +10,7 @@ import {
   updateControlSummaryChips,
   getLayoutOptions,
 } from "./modules/ui.js";
-import { openDetailsPanel, detailsContainer, renderTechniqueDetails } from "./modules/detailsPanel.js";
+import { openDetailsPanel, closeDetailsPanel, detailsContainer, renderTechniqueDetails } from "./modules/detailsPanel.js?v=39";
 import {
   collectSearchSuggestions,
   renderSearchSuggestions,
@@ -18,9 +18,10 @@ import {
   highlightSearchSuggestion,
   applySearchSuggestion,
   performDirectSearch,
-} from "./modules/search.js";
+} from "./modules/search.js?v=3";
 import {
   hydrateWorkflowTacticMetadata,
+  clearTechniquePhaseLookup,
   buildSubtechParentLookup,
   buildPhaseTechniqueCatalog,
   buildWorkflowNeighborGraph,
@@ -30,7 +31,9 @@ import {
   setWorkflowAnchor,
   setThreatActorProfile,
   clearThreatActorProfile,
-} from "./modules/workflowEngine.js";
+  showWhoUsesPanel,
+  hideWhoUsesPanel,
+} from "./modules/workflowEngine.js?v=46";
 import {
   hydrateNodeMap,
   initCytoscape,
@@ -41,7 +44,8 @@ import {
   focusNodeById,
   navigateBack,
   navigateForward,
-} from "./modules/graphRenderer.js";
+  clearPositionCache,
+} from "./modules/graphRenderer.js?v=67";
 
 // --- DOM References (for event listeners) ---
 const searchInputEl = document.getElementById("search");
@@ -53,6 +57,7 @@ const modeTabsContainer = document.getElementById("modeTabs");
 const domainFilterSelect = document.getElementById("domainFilter");
 const focusFilterSelect = document.getElementById("focusFilter");
 const phaseFilterSelect = document.getElementById("phaseFilter");
+const platformFilterSelect = document.getElementById("platformFilter");
 const sortOrderSelect = document.getElementById("sortOrder");
 const layoutStrategySelect = document.getElementById("layoutStrategy");
 const advancedControls = document.getElementById("advancedControls");
@@ -75,9 +80,10 @@ const wfActorSelect = document.getElementById("wfActorSelect");
 const chipFilterSelects = [
   focusModeSelect,
   detailModeSelect,
-  domainFilterSelect,
+  // domainFilterSelect is controlled by .domain-btn buttons, not chip-select UI
   focusFilterSelect,
   phaseFilterSelect,
+  platformFilterSelect,
   sortOrderSelect,
   layoutStrategySelect,
   // Workflow sidebar controls
@@ -88,12 +94,15 @@ const chipFilterSelects = [
   wfCardDetailSelect,
 ].filter(Boolean);
 const customChipSelects = [];
+let isResettingControls = false;
 
 enhanceFilterDropdowns();
 
 // Read initial nodeSampleRange value
 if (nodeSampleRange) state.nodeSampleLimit = Number(nodeSampleRange.value) || state.nodeSampleLimit;
 if (nodeSampleValue) nodeSampleValue.textContent = `${state.nodeSampleLimit} nodes`;
+
+const defaultControlState = captureDefaultControlState();
 
 // --- Data Loading and Initialisation ---
 
@@ -204,6 +213,25 @@ loadAllData()
     const defaultView = buildModeAwareDefaultView(state.nodeSampleLimit);
     initCytoscape(defaultView.elements);
 
+    // Init minimap lazily on first graph view — called here and also on first Graph tab click
+    let minimapReady = false;
+    window.__initMinimapIfReady = function() {
+      if (minimapReady) return;
+      if (!state.cy || typeof state.cy.navigator !== "function") return;
+      if (!document.getElementById("minimap")) return;
+      const stage = document.querySelector(".graph-stage");
+      if (!stage || stage.getBoundingClientRect().width === 0) return;
+      try {
+        state.cy.navigator({ container: "#minimap", viewLiveFramerate: 0, thumbnailEventFramerate: 30, thumbnailLiveFramerate: false, rerenderDelay: 100 });
+        minimapReady = true;
+      } catch (_) {}
+    };
+    // Try immediately (in case graph mode is default)
+    setTimeout(window.__initMinimapIfReady, 200);
+
+    // Always start with the details panel closed — it opens when the user clicks a node
+    closeDetailsPanel({ resetContent: false });
+
     if (state.activeMode === "workflow") {
       renderWorkflowView();
     } else {
@@ -215,6 +243,10 @@ loadAllData()
     }
 
     registerEventListeners();
+
+    // Set initial search visibility based on active mode
+    if (state.activeMode === "workflow") window.__expandSearch?.();
+    else window.__collapseSearch?.();
   })
   .catch(err => {
     if (statusChip) {
@@ -223,6 +255,12 @@ loadAllData()
     }
     console.error("Data load failed:", err);
   });
+
+// --- Helpers ---
+
+function syncDomainButtons(domain) {
+  document.querySelectorAll(".domain-btn").forEach(b => b.classList.toggle("is-active", b.dataset.domain === domain));
+}
 
 // --- Event Listener Registration ---
 
@@ -296,7 +334,25 @@ function registerEventListeners() {
   // Reset view button
   const resetViewButton = document.getElementById("resetView");
   if (resetViewButton) {
-    resetViewButton.addEventListener("click", () => resetToDefaultView());
+    resetViewButton.addEventListener("click", () => resetAllControls());
+  }
+
+  // Graph fullscreen toggle
+  const graphFullscreenBtn = document.getElementById("graphFullscreenBtn");
+  const graphFullscreenIcon = document.getElementById("graphFullscreenIcon");
+  if (graphFullscreenBtn) {
+    graphFullscreenBtn.addEventListener("click", () => {
+      const isFullscreen = document.body.classList.toggle("graph-fullscreen");
+      graphFullscreenBtn.setAttribute("aria-label", isFullscreen ? "Exit fullscreen" : "Enter fullscreen");
+      graphFullscreenBtn.title = isFullscreen ? "Exit fullscreen" : "Fullscreen";
+      if (graphFullscreenIcon) {
+        graphFullscreenIcon.innerHTML = isFullscreen
+          ? `<polyline points="4 14 10 14 10 20"></polyline><polyline points="20 10 14 10 14 4"></polyline><line x1="10" y1="14" x2="3" y2="21"></line><line x1="21" y1="3" x2="14" y2="10"></line>`
+          : `<polyline points="15 3 21 3 21 9"></polyline><polyline points="9 21 3 21 3 15"></polyline><line x1="21" y1="3" x2="14" y2="10"></line><line x1="3" y1="21" x2="10" y2="14"></line>`;
+      }
+      // Tell Cytoscape to recalculate its container size
+      if (state.cy) setTimeout(() => state.cy.resize().fit(), 50);
+    });
   }
 
   // Navigation history buttons
@@ -308,6 +364,7 @@ function registerEventListeners() {
   // Workflow: sidebar — full chain toggle
   if (wfFullChainToggle) {
     wfFullChainToggle.addEventListener("change", function () {
+      if (isResettingControls) return;
       state.workflowTimelineExpanded = this.value === "full";
       renderWorkflowTimeline();
     });
@@ -316,6 +373,7 @@ function registerEventListeners() {
   // Workflow: sidebar — cards per phase
   if (wfCardLimitSelect) {
     wfCardLimitSelect.addEventListener("change", function () {
+      if (isResettingControls) return;
       state.workflowCardLimit = Number(this.value) || 5;
       renderWorkflowView();
     });
@@ -324,9 +382,10 @@ function registerEventListeners() {
   // Workflow: sidebar — phase reach
   if (wfPhaseReachSelect) {
     wfPhaseReachSelect.addEventListener("change", function () {
+      if (isResettingControls) return;
       state.workflowPhaseReach = Number(this.value) || 4;
       // Phase reach affects the neighbor graph — rebuild and re-render
-      import("./modules/workflowEngine.js").then(({ buildWorkflowNeighborGraph, renderWorkflowView: rwv }) => {
+      import("./modules/workflowEngine.js?v=46").then(({ buildWorkflowNeighborGraph, renderWorkflowView: rwv }) => {
         const groups = Object.values(state.entityData.group || {});
         const malware = Object.values(state.entityData.malware || {});
         const campaigns = Object.values(state.entityData.campaign || {});
@@ -339,6 +398,7 @@ function registerEventListeners() {
   // Workflow: sidebar — context chips visibility
   if (wfContextChipsToggle) {
     wfContextChipsToggle.addEventListener("change", function () {
+      if (isResettingControls) return;
       state.workflowShowContextChips = this.value === "on";
       renderWorkflowView();
     });
@@ -347,6 +407,7 @@ function registerEventListeners() {
   // Workflow: sidebar — card detail level
   if (wfCardDetailSelect) {
     wfCardDetailSelect.addEventListener("change", function () {
+      if (isResettingControls) return;
       state.workflowCardDetail = this.value || "standard";
       renderWorkflowView();
     });
@@ -355,6 +416,7 @@ function registerEventListeners() {
   // Workflow: sidebar — threat actor profile
   if (wfActorSelect) {
     wfActorSelect.addEventListener("change", function () {
+      if (isResettingControls) return;
       const groupId = this.value;
       if (groupId) {
         setThreatActorProfile(groupId);
@@ -398,7 +460,13 @@ function registerEventListeners() {
       const anchorButton = event.target.closest("[data-tech-anchor-id]");
       if (anchorButton) {
         const techId = anchorButton.getAttribute("data-tech-anchor-id");
-        if (techId) setWorkflowAnchor(techId);
+        if (techId) {
+          setWorkflowAnchor(techId);
+          const technique = state.techniqueMap[techId];
+          if (technique) {
+            renderTechniqueDetails(technique, techId);
+          }
+        }
         return;
       }
       const focusButton = event.target.closest("[data-focus-node-id]");
@@ -410,6 +478,15 @@ function registerEventListeners() {
         }
         return;
       }
+      // "Who Uses This?" — clicking a workflow technique card body (not a button inside it)
+      // Must come before detailsButton check because the article also has data-show-details-id
+      const techCard = event.target.closest(".workflow-tech-card");
+      if (techCard && !event.target.closest("button")) {
+        const techId = techCard.getAttribute("data-tech-id");
+        if (techId) showWhoUsesPanel(techId, techCard);
+        return;
+      }
+
       const detailsButton = event.target.closest("[data-show-details-id]");
       if (detailsButton) {
         const nodeId = detailsButton.getAttribute("data-show-details-id");
@@ -438,27 +515,106 @@ function registerEventListeners() {
     });
   }
 
+  // Who Uses Panel — close button
+  const whoUsesPanelClose = document.getElementById("whoUsesPanelClose");
+  if (whoUsesPanelClose) {
+    whoUsesPanelClose.addEventListener("click", () => hideWhoUsesPanel());
+  }
+
+  // Who Uses Panel — actor-profile-id clicks inside the panel
+  const whoUsesPanel = document.getElementById("whoUsesPanel");
+  if (whoUsesPanel) {
+    whoUsesPanel.addEventListener("click", event => {
+      const actorRow = event.target.closest("[data-actor-profile-id]");
+      if (actorRow) {
+        const groupId = actorRow.getAttribute("data-actor-profile-id");
+        if (groupId) {
+          hideWhoUsesPanel();
+          setThreatActorProfile(groupId);
+        }
+      }
+    });
+  }
+
+  // Dismiss Who Uses Panel on outside click
+  document.addEventListener("click", event => {
+    if (
+      whoUsesPanel &&
+      !whoUsesPanel.classList.contains("is-hidden") &&
+      !whoUsesPanel.contains(event.target) &&
+      !event.target.closest(".workflow-tech-card")
+    ) {
+      hideWhoUsesPanel();
+    }
+  }, true);
+
+  const searchFieldWrap  = document.getElementById("searchFieldWrap");
+  const searchInput      = document.getElementById("search");
+
+  // Search is always visible — no collapse/expand needed
+  window.__collapseSearch = () => {};
+  window.__expandSearch   = () => {};
+
   // Mode tabs
   if (modeTabsContainer) {
     modeTabsContainer.addEventListener("click", event => {
       const tab = event.target.closest(".mode-tab");
       if (!tab) return;
       const mode = tab.getAttribute("data-mode");
-      if (mode) setActiveMode(mode);
+      if (mode) {
+        setActiveMode(mode);
+        // In graph mode collapse search; in workflow always show expanded
+        if (mode === "workflow") expandSearch();
+        else collapseSearch();
+        if (mode !== "workflow") setTimeout(window.__initMinimapIfReady, 300);
+      }
     });
   }
+
+  // Domain buttons (visual layer over hidden select)
+  document.querySelectorAll(".domain-btn").forEach(btn => {
+    btn.addEventListener("click", function () {
+      const domain = this.dataset.domain;
+      if (!domain) return;
+      // Update hidden select
+      if (domainFilterSelect) {
+        domainFilterSelect.value = domain;
+        domainFilterSelect.dispatchEvent(new Event("change"));
+      }
+      syncDomainButtons(domain);
+    });
+  });
+
+  // Advanced filter toggles
+  ["graphAdvancedToggle", "wfAdvancedToggle"].forEach(toggleId => {
+    const toggleBtn = document.getElementById(toggleId);
+    if (!toggleBtn) return;
+    const bodyId = toggleId.replace("Toggle", "Body");
+    const body = document.getElementById(bodyId);
+    toggleBtn.addEventListener("click", function () {
+      const expanded = this.getAttribute("aria-expanded") === "true";
+      this.setAttribute("aria-expanded", String(!expanded));
+      body && body.classList.toggle("is-hidden", expanded);
+    });
+  });
 
   // Filter selects
   if (domainFilterSelect) {
     domainFilterSelect.addEventListener("change", function () {
-      state.activeDomainFilter = this.value || "all";
+      if (isResettingControls) return;
+      state.activeDomainFilter = this.value || "enterprise-attack";
       updateControlSummaryChips();
+      clearPositionCache();          // always fresh layout when domain changes
+      clearTechniquePhaseLookup();   // phase membership differs per domain
       resetToDefaultView();
+      // Rebuild actor phase map for the new domain if an actor is active
+      if (state.activeActorId) setThreatActorProfile(state.activeActorId);
     });
   }
 
   if (focusFilterSelect) {
     focusFilterSelect.addEventListener("change", function () {
+      if (isResettingControls) return;
       state.activeFocusFilter = this.value || "balanced";
       updateControlSummaryChips();
       resetToDefaultView();
@@ -467,7 +623,17 @@ function registerEventListeners() {
 
   if (phaseFilterSelect) {
     phaseFilterSelect.addEventListener("change", function () {
+      if (isResettingControls) return;
       state.activePhaseFilter = this.value || "all";
+      updateControlSummaryChips();
+      resetToDefaultView();
+    });
+  }
+
+  if (platformFilterSelect) {
+    platformFilterSelect.addEventListener("change", function () {
+      if (isResettingControls) return;
+      state.activePlatformFilter = this.value || "all";
       updateControlSummaryChips();
       resetToDefaultView();
     });
@@ -475,6 +641,7 @@ function registerEventListeners() {
 
   if (sortOrderSelect) {
     sortOrderSelect.addEventListener("change", function () {
+      if (isResettingControls) return;
       state.activeSortOrder = this.value || "phase";
       updateControlSummaryChips();
       resetToDefaultView();
@@ -483,6 +650,7 @@ function registerEventListeners() {
 
   if (layoutStrategySelect) {
     layoutStrategySelect.addEventListener("change", function () {
+      if (isResettingControls) return;
       const requested = this.value || "cose";
       state.activeLayoutPreset = LAYOUT_PRESETS[requested] ? requested : "cose";
       updateControlSummaryChips();
@@ -492,6 +660,7 @@ function registerEventListeners() {
 
   if (focusModeSelect) {
     focusModeSelect.addEventListener("change", function () {
+      if (isResettingControls) return;
       const value = this.value || "attack";
       setActiveMode(value);
     });
@@ -499,6 +668,7 @@ function registerEventListeners() {
 
   if (detailModeSelect) {
     detailModeSelect.addEventListener("change", function () {
+      if (isResettingControls) return;
       const nextContext = this.value === "advanced";
       setContextMode(nextContext);
     });
@@ -507,10 +677,12 @@ function registerEventListeners() {
   // Node sample range
   if (nodeSampleRange && nodeSampleValue) {
     nodeSampleRange.addEventListener("input", function () {
+      if (isResettingControls) return;
       state.nodeSampleLimit = Number(this.value) || state.nodeSampleLimit;
       nodeSampleValue.textContent = `${state.nodeSampleLimit} nodes`;
     });
     nodeSampleRange.addEventListener("change", function () {
+      if (isResettingControls) return;
       state.nodeSampleLimit = Number(this.value) || state.nodeSampleLimit;
       nodeSampleValue.textContent = `${state.nodeSampleLimit} nodes`;
       resetToDefaultView({ preservePositions: true });
@@ -520,18 +692,21 @@ function registerEventListeners() {
   // Procedure/campaign/highlight toggles
   if (showProceduresToggle) {
     showProceduresToggle.addEventListener("change", function () {
+      if (isResettingControls) return;
       state.showProceduresInView = !!this.checked;
       resetToDefaultView({ preservePositions: true });
     });
   }
   if (showCampaignLinksToggle) {
     showCampaignLinksToggle.addEventListener("change", function () {
+      if (isResettingControls) return;
       state.showCampaignLinks = !!this.checked;
       resetToDefaultView({ preservePositions: true });
     });
   }
   if (highlightNewEntitiesToggle) {
     highlightNewEntitiesToggle.addEventListener("change", function () {
+      if (isResettingControls) return;
       state.highlightNewEntities = !!this.checked;
       resetToDefaultView({ preservePositions: true });
     });
@@ -653,6 +828,22 @@ function buildChipSelect(select) {
   renderOptions();
   syncFromSelect();
 
+  const positionMenu = () => {
+    const rect = trigger.getBoundingClientRect();
+    const menuHeight = Math.min(260, window.innerHeight * 0.4);
+    const spaceBelow = window.innerHeight - rect.bottom - 10;
+    const openUpward = spaceBelow < menuHeight && rect.top > menuHeight;
+    menu.style.width = rect.width + "px";
+    menu.style.left = rect.left + "px";
+    if (openUpward) {
+      menu.style.top = "auto";
+      menu.style.bottom = (window.innerHeight - rect.top + 8) + "px";
+    } else {
+      menu.style.bottom = "auto";
+      menu.style.top = (rect.bottom + 8) + "px";
+    }
+  };
+
   trigger.addEventListener("click", () => {
     const isOpen = wrapper.classList.contains("is-open");
     customChipSelects.forEach(control => {
@@ -662,6 +853,7 @@ function buildChipSelect(select) {
       wrapper.classList.remove("is-open");
       trigger.setAttribute("aria-expanded", "false");
     } else {
+      positionMenu();
       wrapper.classList.add("is-open");
       trigger.setAttribute("aria-expanded", "true");
     }
@@ -747,4 +939,172 @@ function buildChipRadio(select, chipField) {
     wrapper: group,
     close() {},
   };
+}
+
+function captureDefaultControlState() {
+  return {
+    activeMode: state.activeMode,
+    useContextEntities: state.useContextEntities,
+    focusModeValue: focusModeSelect ? focusModeSelect.value : (state.activeMode || "attack"),
+    detailModeValue: detailModeSelect ? detailModeSelect.value : (state.useContextEntities ? "advanced" : "basic"),
+    activeDomainFilter: domainFilterSelect ? domainFilterSelect.value : state.activeDomainFilter,
+    activeFocusFilter: focusFilterSelect ? focusFilterSelect.value : state.activeFocusFilter,
+    activePhaseFilter: phaseFilterSelect ? phaseFilterSelect.value : state.activePhaseFilter,
+    activePlatformFilter: platformFilterSelect ? platformFilterSelect.value : state.activePlatformFilter,
+    activeSortOrder: sortOrderSelect ? sortOrderSelect.value : state.activeSortOrder,
+    activeLayoutPreset: layoutStrategySelect ? layoutStrategySelect.value : state.activeLayoutPreset,
+    nodeSampleLimit: state.nodeSampleLimit,
+    showProceduresInView: showProceduresToggle ? !!showProceduresToggle.checked : state.showProceduresInView,
+    showCampaignLinks: showCampaignLinksToggle ? !!showCampaignLinksToggle.checked : state.showCampaignLinks,
+    highlightNewEntities: highlightNewEntitiesToggle ? !!highlightNewEntitiesToggle.checked : state.highlightNewEntities,
+    wfFullChainValue: wfFullChainToggle
+      ? wfFullChainToggle.value
+      : state.workflowTimelineExpanded
+        ? "full"
+        : "anchored",
+    wfCardLimitValue: wfCardLimitSelect ? wfCardLimitSelect.value : String(state.workflowCardLimit),
+    wfCardLimitNumber: wfCardLimitSelect ? Number(wfCardLimitSelect.value) : state.workflowCardLimit,
+    wfPhaseReachValue: wfPhaseReachSelect ? wfPhaseReachSelect.value : String(state.workflowPhaseReach),
+    wfPhaseReachNumber: wfPhaseReachSelect ? Number(wfPhaseReachSelect.value) : state.workflowPhaseReach,
+    wfContextChipsValue: wfContextChipsToggle
+      ? wfContextChipsToggle.value
+      : state.workflowShowContextChips
+        ? "on"
+        : "off",
+    wfCardDetailValue: wfCardDetailSelect ? wfCardDetailSelect.value : state.workflowCardDetail,
+    wfActorValue: wfActorSelect ? wfActorSelect.value : "",
+  };
+}
+
+function resetAllControls() {
+  if (!defaultControlState) return;
+
+  const desiredMode =
+    state.activeMode || defaultControlState.activeMode || defaultControlState.focusModeValue || "attack";
+  const desiredFocusModeValue =
+    desiredMode === "workflow" ? defaultControlState.focusModeValue : desiredMode;
+
+  isResettingControls = true;
+  try {
+    if (focusModeSelect && desiredFocusModeValue !== undefined) {
+      setSelectValue(focusModeSelect, desiredFocusModeValue);
+    }
+    if (detailModeSelect && defaultControlState.detailModeValue !== undefined) {
+      setSelectValue(detailModeSelect, defaultControlState.detailModeValue);
+    }
+    if (defaultControlState.activeDomainFilter !== undefined) {
+      state.activeDomainFilter = defaultControlState.activeDomainFilter;
+      if (domainFilterSelect) domainFilterSelect.value = defaultControlState.activeDomainFilter;
+      syncDomainButtons(defaultControlState.activeDomainFilter);  // keep buttons in sync
+    }
+    if (defaultControlState.activeFocusFilter !== undefined) {
+      state.activeFocusFilter = defaultControlState.activeFocusFilter;
+      if (focusFilterSelect) setSelectValue(focusFilterSelect, defaultControlState.activeFocusFilter);
+    }
+    if (defaultControlState.activePhaseFilter !== undefined) {
+      state.activePhaseFilter = defaultControlState.activePhaseFilter;
+      if (phaseFilterSelect) setSelectValue(phaseFilterSelect, defaultControlState.activePhaseFilter);
+    }
+    if (defaultControlState.activePlatformFilter !== undefined) {
+      state.activePlatformFilter = defaultControlState.activePlatformFilter;
+      if (platformFilterSelect) setSelectValue(platformFilterSelect, defaultControlState.activePlatformFilter);
+    }
+    if (defaultControlState.activeSortOrder !== undefined) {
+      state.activeSortOrder = defaultControlState.activeSortOrder;
+      if (sortOrderSelect) setSelectValue(sortOrderSelect, defaultControlState.activeSortOrder);
+    }
+    if (defaultControlState.activeLayoutPreset !== undefined) {
+      state.activeLayoutPreset = defaultControlState.activeLayoutPreset;
+      if (layoutStrategySelect) setSelectValue(layoutStrategySelect, defaultControlState.activeLayoutPreset);
+    }
+    if (wfFullChainToggle && defaultControlState.wfFullChainValue !== undefined) {
+      setSelectValue(wfFullChainToggle, defaultControlState.wfFullChainValue);
+    }
+    if (wfCardLimitSelect && defaultControlState.wfCardLimitValue !== undefined) {
+      setSelectValue(wfCardLimitSelect, defaultControlState.wfCardLimitValue);
+    }
+    if (wfPhaseReachSelect && defaultControlState.wfPhaseReachValue !== undefined) {
+      setSelectValue(wfPhaseReachSelect, defaultControlState.wfPhaseReachValue);
+    }
+    if (wfContextChipsToggle && defaultControlState.wfContextChipsValue !== undefined) {
+      setSelectValue(wfContextChipsToggle, defaultControlState.wfContextChipsValue);
+    }
+    if (wfCardDetailSelect && defaultControlState.wfCardDetailValue !== undefined) {
+      setSelectValue(wfCardDetailSelect, defaultControlState.wfCardDetailValue);
+    }
+  } finally {
+    isResettingControls = false;
+  }
+
+  setActiveMode(desiredMode, { skipReset: true });
+
+  // Malware / Groups / Campaigns / Procedures modes require context (extended graph).
+  // Never turn context off while in one of these modes or their nodes disappear entirely.
+  const modeRequiresContext = Boolean(MODE_NODE_TYPES[desiredMode]);
+  const desiredContext = modeRequiresContext
+    ? true
+    : (typeof defaultControlState.useContextEntities === "boolean"
+        ? defaultControlState.useContextEntities
+        : false);
+  if (state.graphDataExtended) {
+    setContextMode(desiredContext, { skipReset: true });
+  } else {
+    state.useContextEntities = desiredContext;
+    state.graphDataRef = desiredContext ? state.graphDataExtended : state.graphDataCore;
+  }
+
+  state.nodeSampleLimit = defaultControlState.nodeSampleLimit;
+  if (nodeSampleRange) nodeSampleRange.value = String(defaultControlState.nodeSampleLimit);
+  if (nodeSampleValue) nodeSampleValue.textContent = `${state.nodeSampleLimit} nodes`;
+
+  state.showProceduresInView = defaultControlState.showProceduresInView;
+  if (showProceduresToggle) showProceduresToggle.checked = defaultControlState.showProceduresInView;
+
+  state.showCampaignLinks = defaultControlState.showCampaignLinks;
+  if (showCampaignLinksToggle) showCampaignLinksToggle.checked = defaultControlState.showCampaignLinks;
+
+  state.highlightNewEntities = defaultControlState.highlightNewEntities;
+  if (highlightNewEntitiesToggle) highlightNewEntitiesToggle.checked = defaultControlState.highlightNewEntities;
+
+  state.workflowTimelineExpanded = (defaultControlState.wfFullChainValue || "anchored") === "full";
+  const defaultCardLimit = Number.isFinite(defaultControlState.wfCardLimitNumber)
+    ? defaultControlState.wfCardLimitNumber
+    : Number(defaultControlState.wfCardLimitValue);
+  if (Number.isFinite(defaultCardLimit)) state.workflowCardLimit = defaultCardLimit;
+  const defaultPhaseReach = Number.isFinite(defaultControlState.wfPhaseReachNumber)
+    ? defaultControlState.wfPhaseReachNumber
+    : Number(defaultControlState.wfPhaseReachValue);
+  if (Number.isFinite(defaultPhaseReach)) state.workflowPhaseReach = defaultPhaseReach;
+  state.workflowShowContextChips = defaultControlState.wfContextChipsValue !== "off";
+  state.workflowCardDetail = defaultControlState.wfCardDetailValue || "standard";
+
+  if (wfActorSelect) wfActorSelect.value = defaultControlState.wfActorValue ?? "";
+  state.activeActorId = null;
+  state.actorPhaseMap = {};
+
+  state.activeWorkflowTechniqueId = null;
+  state.activeWorkflowPhaseIndex = null;
+  state.workflowTimelineHighlights = [];
+  state.workflowPhaseColumns = new Map();
+
+  const groups = Object.values(state.entityData.group || {});
+  const malware = Object.values(state.entityData.malware || {});
+  const campaigns = Object.values(state.entityData.campaign || {});
+  buildWorkflowNeighborGraph({ groups, malware, campaigns });
+
+  if (searchInputEl) searchInputEl.value = "";
+  clearSearchSuggestions();
+  customChipSelects.forEach(control => control.close());
+  updateControlSummaryChips();
+  renderWorkflowTimeline([]);
+  resetToDefaultView();
+}
+
+function setSelectValue(selectEl, value) {
+  if (!selectEl || value === undefined || value === null) return;
+  const hasOption =
+    !selectEl.options || Array.from(selectEl.options).some(option => option.value === value);
+  if (!hasOption) return;
+  selectEl.value = value;
+  selectEl.dispatchEvent(new Event("change", { bubbles: true }));
 }

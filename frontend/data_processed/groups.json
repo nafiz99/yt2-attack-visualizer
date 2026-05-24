@@ -2079,6 +2079,11 @@
         "name": "Web Shell"
       },
       {
+        "stix_id": "attack-pattern--5e0f75da-e108-4688-a6de-a4f07cc2cbe3",
+        "attack_id": "T0862",
+        "name": "Supply Chain Compromise"
+      },
+      {
         "stix_id": "attack-pattern--635cbe30-392d-4e27-978e-66774357c762",
         "attack_id": "T1136.001",
         "name": "Local Account"
@@ -2102,6 +2107,11 @@
         "stix_id": "attack-pattern--7385dfaf-6886-4229-9ecd-6fd678040830",
         "attack_id": "T1059",
         "name": "Command and Scripting Interpreter"
+      },
+      {
+        "stix_id": "attack-pattern--7830cfcf-b268-4ac0-a69e-73c6affbae9a",
+        "attack_id": "T0817",
+        "name": "Drive-by Compromise"
       },
       {
         "stix_id": "attack-pattern--79da0971-3147-4af6-a4f5-e8cd447cd795",
@@ -2372,6 +2382,11 @@
         "name": "SSH"
       },
       {
+        "stix_id": "attack-pattern--2dc2b567-8821-49f9-9045-8740f3d0b958",
+        "attack_id": "T0853",
+        "name": "Scripting"
+      },
+      {
         "stix_id": "attack-pattern--2e34237d-8574-43f6-aace-ae2915de8597",
         "attack_id": "T1566.001",
         "name": "Spearphishing Attachment"
@@ -2482,6 +2497,11 @@
         "name": "Web Shell"
       },
       {
+        "stix_id": "attack-pattern--648f995e-9c3a-41e4-aeee-98bb41037426",
+        "attack_id": "T0865",
+        "name": "Spearphishing Attachment"
+      },
+      {
         "stix_id": "attack-pattern--65f2d882-3f41-4d48-8a06-29af77ec9f90",
         "attack_id": "T1003.001",
         "name": "LSASS Memory"
@@ -2500,6 +2520,11 @@
         "stix_id": "attack-pattern--7385dfaf-6886-4229-9ecd-6fd678040830",
         "attack_id": "T1059",
         "name": "Command and Scripting Interpreter"
+      },
+      {
+        "stix_id": "attack-pattern--7830cfcf-b268-4ac0-a69e-73c6affbae9a",
+        "attack_id": "T0817",
+        "name": "Drive-by Compromise"
       },
       {
         "stix_id": "attack-pattern--7e150503-88e7-4861-866b-ff1ac82c4475",
@@ -2587,6 +2612,11 @@
         "name": "Domain Accounts"
       },
       {
+        "stix_id": "attack-pattern--cd2c76a4-5e23-4ca5-9c40-d5e0604f7101",
+        "attack_id": "T0859",
+        "name": "Valid Accounts"
+      },
+      {
         "stix_id": "attack-pattern--d1fcf083-a721-4223-aedf-bf8960798d62",
         "attack_id": "T1059.003",
         "name": "Windows Command Shell"
@@ -2610,6 +2640,11 @@
         "stix_id": "attack-pattern--dfd7cc1d-e1d8-4394-a198-97c4cab8aa67",
         "attack_id": "T1059.005",
         "name": "Visual Basic"
+      },
+      {
+        "stix_id": "attack-pattern--e076cca8-2f08-45c9-aff7-ea5ac798b387",
+        "attack_id": "T0869",
+        "name": "Standard Application Layer Protocol"
       },
       {
         "stix_id": "attack-pattern--e3a12395-188d-4051-9a16-ea8e14d07b88",
@@ -3150,6 +3185,11 @@
         "stix_id": "attack-pattern--53ac20cd-aca3-406e-9aa0-9fc7fdc60a5a",
         "attack_id": "T1560",
         "name": "Archive Collected Data"
+      },
+      {
+        "stix_id": "attack-pattern--648f995e-9c3a-41e4-aeee-98bb41037426",
+        "attack_id": "T0865",
+        "name": "Spearphishing Attachment"
       },
       {
         "stix_id": "attack-pattern--65013dd2-bc61-43e3-afb5-a14c4fa7437a",
@@ -5299,6 +5339,11 @@
         "name": "Databases"
       },
       {
+        "stix_id": "attack-pattern--24a9253e-8948-4c98-b751-8e2aee53127c",
+        "attack_id": "T0807",
+        "name": "Command-Line Interface"
+      },
+      {
         "stix_id": "attack-pattern--274770e0-2612-4ccf-a678-ef8e7bad365d",
         "attack_id": "T1586.001",
         "name": "Social Media Accounts"
@@ -5327,6 +5372,11 @@
         "stix_id": "attack-pattern--3257eb21-f9a7-4430-8de1-d8b6e288f529",
         "attack_id": "T1040",
         "name": "Network Sniffing"
+      },
+      {
+        "stix_id": "attack-pattern--32632a95-6856-47b9-9ab7-fea5cd7dce00",
+        "attack_id": "T0819",
+        "name": "Exploit Public-Facing Application"
       },
       {
         "stix_id": "attack-pattern--354a7f88-63fb-41b5-a801-ce3b377b36f1",
@@ -5429,6 +5479,11 @@
         "name": "Business Relationships"
       },
       {
+        "stix_id": "attack-pattern--702055ac-4e54-4ae9-9527-e23a38e0b160",
+        "attack_id": "T1409",
+        "name": "Stored Application Data"
+      },
+      {
         "stix_id": "attack-pattern--731f4f55-b6d0-41d1-a7a9-072a66389aea",
         "attack_id": "T1090",
         "name": "Proxy"
@@ -5477,6 +5532,11 @@
         "stix_id": "attack-pattern--a0e6614a-7740-4b24-bd65-f1bde09fc365",
         "attack_id": "T1593",
         "name": "Search Open Websites/Domains"
+      },
+      {
+        "stix_id": "attack-pattern--a126c117-54e4-4b93-9e4f-72cc964e6760",
+        "attack_id": "T1676",
+        "name": "Linked Devices"
       },
       {
         "stix_id": "attack-pattern--a2fdce72-04b2-409a-ac10-cc1695f4fce0",
@@ -5557,6 +5617,16 @@
         "stix_id": "attack-pattern--d63a3fb8-9452-4e9d-a60a-54be68d5998c",
         "attack_id": "T1070.004",
         "name": "File Deletion"
+      },
+      {
+        "stix_id": "attack-pattern--d67adac8-e3b9-44f9-9e6d-6c2a7d69dbe4",
+        "attack_id": "T0884",
+        "name": "Connection Proxy"
+      },
+      {
+        "stix_id": "attack-pattern--defc1257-4db1-4fb3-8ef5-bb77f63146df",
+        "attack_id": "T1660",
+        "name": "Phishing"
       },
       {
         "stix_id": "attack-pattern--df8b2a25-8bdf-4856-953c-a04372b1c161",
@@ -14019,6 +14089,11 @@
         "name": "Tool"
       },
       {
+        "stix_id": "attack-pattern--a64a820a-cb21-471f-920c-506a2ff04fa5",
+        "attack_id": "T1451",
+        "name": "SIM Card Swap"
+      },
+      {
         "stix_id": "attack-pattern--b17a1a56-e99c-403c-8948-561df0cffe81",
         "attack_id": "T1078",
         "name": "Valid Accounts"
@@ -14808,6 +14883,11 @@
         "stix_id": "attack-pattern--c21d5a77-d422-4a69-acd7-2c53c1faa34b",
         "attack_id": "T1095",
         "name": "Non-Application Layer Protocol"
+      },
+      {
+        "stix_id": "attack-pattern--defc1257-4db1-4fb3-8ef5-bb77f63146df",
+        "attack_id": "T1660",
+        "name": "Phishing"
       },
       {
         "stix_id": "attack-pattern--df8b2a25-8bdf-4856-953c-a04372b1c161",
@@ -18495,6 +18575,11 @@
         "name": "Tool"
       },
       {
+        "stix_id": "attack-pattern--a64a820a-cb21-471f-920c-506a2ff04fa5",
+        "attack_id": "T1451",
+        "name": "SIM Card Swap"
+      },
+      {
         "stix_id": "attack-pattern--a9d4b653-6915-42af-98b2-5758c4ceee56",
         "attack_id": "T1059.004",
         "name": "Unix Shell"
@@ -18563,6 +18648,11 @@
         "stix_id": "attack-pattern--d4287702-e2f7-4946-bdfa-2c7f5aaa5032",
         "attack_id": "T1219.002",
         "name": "Remote Desktop Software"
+      },
+      {
+        "stix_id": "attack-pattern--defc1257-4db1-4fb3-8ef5-bb77f63146df",
+        "attack_id": "T1660",
+        "name": "Phishing"
       },
       {
         "stix_id": "attack-pattern--dfefe2ed-4389-4318-8762-f0272b350a1b",
@@ -20101,14 +20191,39 @@
         "name": "Masquerading"
       },
       {
+        "stix_id": "attack-pattern--6683aa0c-d98a-4f5b-ac57-ca7e9934a760",
+        "attack_id": "T1429",
+        "name": "Audio Capture"
+      },
+      {
+        "stix_id": "attack-pattern--6c49d50f-494d-4150-b774-a655022d20a6",
+        "attack_id": "T1407",
+        "name": "Download New Code at Runtime"
+      },
+      {
+        "stix_id": "attack-pattern--6ffad4be-bfe0-424f-abde-4d9a84a800ad",
+        "attack_id": "T1633.001",
+        "name": "System Checks"
+      },
+      {
         "stix_id": "attack-pattern--8f4a33ec-8b1f-4b80-a2f6-642b2e479580",
         "attack_id": "T1057",
         "name": "Process Discovery"
       },
       {
+        "stix_id": "attack-pattern--99e6295e-741b-4857-b6e5-64989eb039b4",
+        "attack_id": "T1430",
+        "name": "Location Tracking"
+      },
+      {
         "stix_id": "attack-pattern--9efb1ea7-c37b-4595-9640-b7680cd84279",
         "attack_id": "T1547.001",
         "name": "Registry Run Keys / Startup Folder"
+      },
+      {
+        "stix_id": "attack-pattern--b1c95426-2550-4621-8028-ceebf28b3a47",
+        "attack_id": "T1417.001",
+        "name": "Keylogging"
       },
       {
         "stix_id": "attack-pattern--b3d682b6-98f2-4fb0-aa3b-b4df007ca70a",
@@ -20121,14 +20236,39 @@
         "name": "Invalid Code Signature"
       },
       {
+        "stix_id": "attack-pattern--bb4387ab-7a51-468b-bf5f-a9a8612f0303",
+        "attack_id": "T1521.001",
+        "name": "Symmetric Cryptography"
+      },
+      {
+        "stix_id": "attack-pattern--c6421411-ae61-42bb-9098-73fddb315002",
+        "attack_id": "T1636.004",
+        "name": "SMS Messages"
+      },
+      {
         "stix_id": "attack-pattern--cba37adb-d6fb-4610-b069-dd04c0643384",
         "attack_id": "T1518.001",
         "name": "Security Software Discovery"
       },
       {
+        "stix_id": "attack-pattern--cf28ca46-1fd3-46b4-b1f6-ec0b72361848",
+        "attack_id": "T1420",
+        "name": "File and Directory Discovery"
+      },
+      {
+        "stix_id": "attack-pattern--d13fa042-8f26-44e1-a2a8-af0bf8e2ac9a",
+        "attack_id": "T1406",
+        "name": "Obfuscated Files or Information"
+      },
+      {
         "stix_id": "attack-pattern--d742a578-d70e-4d0e-96a6-02a9c30204e6",
         "attack_id": "T1189",
         "name": "Drive-by Compromise"
+      },
+      {
+        "stix_id": "attack-pattern--d8940e76-f9c1-4912-bea6-e21c251370b6",
+        "attack_id": "T1512",
+        "name": "Video Capture"
       },
       {
         "stix_id": "attack-pattern--df8b2a25-8bdf-4856-953c-a04372b1c161",
@@ -20141,14 +20281,39 @@
         "name": "Visual Basic"
       },
       {
+        "stix_id": "attack-pattern--e0b9ecb8-a7d1-43c7-aa30-8e19c6a92c86",
+        "attack_id": "T1636.003",
+        "name": "Contact List"
+      },
+      {
+        "stix_id": "attack-pattern--e1c912a9-e305-434b-9172-8a6ce3ec9c4a",
+        "attack_id": "T1533",
+        "name": "Data from Local System"
+      },
+      {
+        "stix_id": "attack-pattern--e2ea7f6b-8d4f-49c3-819d-660530d12b77",
+        "attack_id": "T1426",
+        "name": "System Information Discovery"
+      },
+      {
         "stix_id": "attack-pattern--e3b6daca-e963-4a69-aee6-ed4fd653ad58",
         "attack_id": "T1518",
         "name": "Software Discovery"
       },
       {
+        "stix_id": "attack-pattern--e422b6fa-4739-46b9-992e-82f1b350c780",
+        "attack_id": "T1627.001",
+        "name": "Geofencing"
+      },
+      {
         "stix_id": "attack-pattern--e6919abc-99f9-4c6c-95a5-14761e7b2add",
         "attack_id": "T1105",
         "name": "Ingress Tool Transfer"
+      },
+      {
+        "stix_id": "attack-pattern--ea132c68-b518-4478-ae8d-1763cda26ee3",
+        "attack_id": "T1628.003",
+        "name": "Conceal Multimedia Files"
       },
       {
         "stix_id": "attack-pattern--ef67e13e-5598-4adc-bdb2-998225874fa9",
@@ -20159,6 +20324,11 @@
         "stix_id": "attack-pattern--f6ad61ee-65f3-4bd0-a3f5-2f0accb36317",
         "attack_id": "T1566.003",
         "name": "Spearphishing via Service"
+      },
+      {
+        "stix_id": "attack-pattern--fcb11f06-ce0e-490b-bcc1-04a1623579f0",
+        "attack_id": "T1632.001",
+        "name": "Code Signing Policy Modification"
       }
     ]
   },
@@ -22189,6 +22359,11 @@
         "name": "Encrypted/Encoded File"
       },
       {
+        "stix_id": "attack-pattern--2282a98b-5049-4f61-9381-55baca7c1add",
+        "attack_id": "T1437.001",
+        "name": "Web Protocols"
+      },
+      {
         "stix_id": "attack-pattern--232b7f21-adf9-4b42-b936-b9d6f7df856e",
         "attack_id": "T1204.002",
         "name": "Malicious File"
@@ -23760,6 +23935,11 @@
         "name": "Spearphishing Link"
       },
       {
+        "stix_id": "attack-pattern--2dc2b567-8821-49f9-9045-8740f3d0b958",
+        "attack_id": "T0853",
+        "name": "Scripting"
+      },
+      {
         "stix_id": "attack-pattern--2e34237d-8574-43f6-aace-ae2915de8597",
         "attack_id": "T1566.001",
         "name": "Spearphishing Attachment"
@@ -23778,6 +23958,11 @@
         "stix_id": "attack-pattern--58a3e6aa-4453-4cc8-a51f-4befe80b31a8",
         "attack_id": "T1555.003",
         "name": "Credentials from Web Browsers"
+      },
+      {
+        "stix_id": "attack-pattern--648f995e-9c3a-41e4-aeee-98bb41037426",
+        "attack_id": "T0865",
+        "name": "Spearphishing Attachment"
       },
       {
         "stix_id": "attack-pattern--65f2d882-3f41-4d48-8a06-29af77ec9f90",
@@ -23843,6 +24028,11 @@
         "stix_id": "attack-pattern--be2dcee9-a7a7-4e38-afd6-21b31ecc3d63",
         "attack_id": "T1203",
         "name": "Exploitation for Client Execution"
+      },
+      {
+        "stix_id": "attack-pattern--c5e3cdbc-0387-4be9-8f83-ff5c0865f377",
+        "attack_id": "T0852",
+        "name": "Screen Capture"
       },
       {
         "stix_id": "attack-pattern--df8b2a25-8bdf-4856-953c-a04372b1c161",
@@ -24285,6 +24475,18 @@
     "domains": [
       "enterprise-attack",
       "ics-attack"
+    ],
+    "techniques": [
+      {
+        "stix_id": "attack-pattern--5e0f75da-e108-4688-a6de-a4f07cc2cbe3",
+        "attack_id": "T0862",
+        "name": "Supply Chain Compromise"
+      },
+      {
+        "stix_id": "attack-pattern--7830cfcf-b268-4ac0-a69e-73c6affbae9a",
+        "attack_id": "T0817",
+        "name": "Drive-by Compromise"
+      }
     ]
   },
   {
@@ -25142,6 +25344,11 @@
         "name": "JavaScript"
       },
       {
+        "stix_id": "attack-pattern--114fed8b-7eed-4136-8b9c-411c5c7fff4b",
+        "attack_id": "T1655.001",
+        "name": "Match Legitimate Name or Location"
+      },
+      {
         "stix_id": "attack-pattern--359b00ad-9425-420b-bba5-6de8d600cbc0",
         "attack_id": "T1074.002",
         "name": "Remote Data Staging"
@@ -25327,6 +25534,11 @@
         "stix_id": "attack-pattern--a0e6614a-7740-4b24-bd65-f1bde09fc365",
         "attack_id": "T1593",
         "name": "Search Open Websites/Domains"
+      },
+      {
+        "stix_id": "attack-pattern--a126c117-54e4-4b93-9e4f-72cc964e6760",
+        "attack_id": "T1676",
+        "name": "Linked Devices"
       },
       {
         "stix_id": "attack-pattern--a2fdce72-04b2-409a-ac10-cc1695f4fce0",
@@ -26070,6 +26282,23 @@
     "domains": [
       "mobile-attack",
       "enterprise-attack"
+    ],
+    "techniques": [
+      {
+        "stix_id": "attack-pattern--114fed8b-7eed-4136-8b9c-411c5c7fff4b",
+        "attack_id": "T1655.001",
+        "name": "Match Legitimate Name or Location"
+      },
+      {
+        "stix_id": "attack-pattern--d4536441-1bcc-49fa-80ae-a596ed3f7ffd",
+        "attack_id": "T1422",
+        "name": "System Network Configuration Discovery"
+      },
+      {
+        "stix_id": "attack-pattern--defc1257-4db1-4fb3-8ef5-bb77f63146df",
+        "attack_id": "T1660",
+        "name": "Phishing"
+      }
     ]
   },
   {
@@ -26123,6 +26352,120 @@
     "modified": "2025-04-25T14:40:07.627Z",
     "domains": [
       "enterprise-attack"
+    ]
+  },
+  {
+    "stix_id": "intrusion-set--049cef3b-22d5-4be6-b50c-9839c7a34fdd",
+    "attack_id": "G0097",
+    "name": "Bouncing Golf",
+    "aliases": [
+      "Bouncing Golf"
+    ],
+    "description": "[Bouncing Golf](https://attack.mitre.org/groups/G0097) is a cyberespionage campaign targeting Middle Eastern countries.(Citation: Trend Micro Bouncing Golf 2019)",
+    "first_seen": null,
+    "last_seen": null,
+    "primary_motivation": null,
+    "secondary_motivations": [],
+    "goals": [],
+    "created": "2020-01-27T16:55:39.688Z",
+    "modified": "2025-04-25T14:41:32.241Z",
+    "domains": [
+      "mobile-attack"
+    ],
+    "techniques": [
+      {
+        "stix_id": "attack-pattern--114fed8b-7eed-4136-8b9c-411c5c7fff4b",
+        "attack_id": "T1655.001",
+        "name": "Match Legitimate Name or Location"
+      }
+    ]
+  },
+  {
+    "stix_id": "intrusion-set--1f322d74-4822-4d60-8f64-414eea8a9258",
+    "attack_id": "G1029",
+    "name": "UNC788",
+    "aliases": [
+      "UNC788"
+    ],
+    "description": "[UNC788](https://attack.mitre.org/groups/G1029) is a group of hackers from Iran that has targeted people in the Middle East.(Citation: Meta Adversarial Threat Report 2022)",
+    "first_seen": null,
+    "last_seen": null,
+    "primary_motivation": null,
+    "secondary_motivations": [],
+    "goals": [],
+    "created": "2024-04-02T18:58:36.186Z",
+    "modified": "2024-04-02T18:58:54.885Z",
+    "domains": [
+      "mobile-attack"
+    ],
+    "techniques": [
+      {
+        "stix_id": "attack-pattern--defc1257-4db1-4fb3-8ef5-bb77f63146df",
+        "attack_id": "T1660",
+        "name": "Phishing"
+      }
+    ]
+  },
+  {
+    "stix_id": "intrusion-set--190242d7-73fc-4738-af68-20162f7a5aae",
+    "attack_id": "G1000",
+    "name": "ALLANITE",
+    "aliases": [
+      "ALLANITE",
+      "Palmetto Fusion"
+    ],
+    "description": "[ALLANITE](https://attack.mitre.org/groups/G1000) is a suspected Russian cyber espionage group, that has primarily targeted the electric utility sector within the United States and United Kingdom. The group's tactics and techniques are reportedly similar to [Dragonfly](https://attack.mitre.org/groups/G0035), although [ALLANITE](https://attack.mitre.org/groups/G1000)s technical capabilities have not exhibited disruptive or destructive abilities. It has been suggested that the group maintains a presence in ICS for the purpose of gaining understanding of processes and to maintain persistence. (Citation: Dragos)",
+    "first_seen": null,
+    "last_seen": null,
+    "primary_motivation": null,
+    "secondary_motivations": [],
+    "goals": [],
+    "created": "2017-05-31T21:31:57.307Z",
+    "modified": "2025-04-16T21:26:23.407Z",
+    "domains": [
+      "ics-attack"
+    ],
+    "techniques": [
+      {
+        "stix_id": "attack-pattern--648f995e-9c3a-41e4-aeee-98bb41037426",
+        "attack_id": "T0865",
+        "name": "Spearphishing Attachment"
+      },
+      {
+        "stix_id": "attack-pattern--7830cfcf-b268-4ac0-a69e-73c6affbae9a",
+        "attack_id": "T0817",
+        "name": "Drive-by Compromise"
+      },
+      {
+        "stix_id": "attack-pattern--c5e3cdbc-0387-4be9-8f83-ff5c0865f377",
+        "attack_id": "T0852",
+        "name": "Screen Capture"
+      },
+      {
+        "stix_id": "attack-pattern--cd2c76a4-5e23-4ca5-9c40-d5e0604f7101",
+        "attack_id": "T0859",
+        "name": "Valid Accounts"
+      }
+    ]
+  },
+  {
+    "stix_id": "intrusion-set--a07a367a-146c-45a8-a830-d3d337b9befa",
+    "attack_id": "G1027",
+    "name": "CyberAv3ngers",
+    "aliases": [
+      "CyberAv3ngers",
+      "Soldiers of Soloman"
+    ],
+    "description": "The [CyberAv3ngers](https://attack.mitre.org/groups/G1027) are a suspected Iranian Government Islamic Revolutionary Guard Corps (IRGC)-affiliated APT group. The [CyberAv3ngers](https://attack.mitre.org/groups/G1027) have been known to be active since at least 2020, with disputed and false claims of critical infrastructure compromises in Israel.(Citation: CISA AA23-335A IRGC-Affiliated December 2023)\n\nIn 2023, the [CyberAv3ngers](https://attack.mitre.org/groups/G1027) engaged in a global targeting and hacking of the Unitronics [Programmable Logic Controller (PLC)](https://attack.mitre.org/assets/A0003) with [Human-Machine Interface (HMI)](https://attack.mitre.org/assets/A0002). This PLC can be found in multiple sectors, including water and wastewater, energy, food and beverage manufacturing, and healthcare. The most notable feature of this attack was the defacement of the devices user interface.(Citation: CISA AA23-335A IRGC-Affiliated December 2023)",
+    "first_seen": null,
+    "last_seen": null,
+    "primary_motivation": null,
+    "secondary_motivations": [],
+    "goals": [],
+    "created": "2024-03-25T19:57:07.829Z",
+    "modified": "2024-04-10T18:39:36.997Z",
+    "domains": [
+      "ics-attack"
     ]
   }
 ]

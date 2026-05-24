@@ -15,8 +15,32 @@ def write_dataset(filename, payload):
         with (target_dir / filename).open('w', encoding='utf-8') as handle:
             json.dump(payload, handle, indent=2, ensure_ascii=False)
 
-# Path to your STIX file
-file_path = "data_raw/enterprise-attack.json"
+# Load all three domain STIX bundles and merge their objects.
+# Objects are deduplicated by STIX id so shared entities (groups, malware
+# that appear across domains) are only included once.
+DOMAIN_FILES = {
+    "enterprise-attack": "data_raw/enterprise-attack.json",
+    "mobile-attack":     "data_raw/mobile-attack.json",
+    "ics-attack":        "data_raw/ics-attack.json",
+}
+
+all_objects_by_id = {}  # deduplicated by stix id
+for domain_key, file_path in DOMAIN_FILES.items():
+    p = Path(file_path)
+    if not p.exists():
+        print(f"WARNING: {file_path} not found, skipping {domain_key}")
+        continue
+    with open(file_path, "r", encoding="utf-8") as f:
+        data = json.load(f)
+    domain_objects = data.get("objects", [])
+    print(f"Loaded {len(domain_objects):,} objects from {domain_key}")
+    for obj in domain_objects:
+        oid = obj.get("id")
+        if oid and oid not in all_objects_by_id:
+            all_objects_by_id[oid] = obj
+
+objects = list(all_objects_by_id.values())
+print(f"Total unique objects after merge: {len(objects):,}")
 
 
 def extract_external_id(obj, source_name="mitre-attack"):
@@ -41,29 +65,19 @@ def get_object_name(stix_id, lookup):
     return obj.get("name", stix_id)
 
 
-# Load the JSON
-with open(file_path, "r", encoding="utf-8") as f:
-    data = json.load(f)
-
-print("STIX Type:", data.get("type"))
-print("STIX Version:", data.get("spec_version"))
-
-objects = data.get("objects", [])
 object_lookup = build_object_lookup(objects)
 object_type_lookup = {sid: obj.get("type") for sid, obj in object_lookup.items()}
 
-print("Total Objects:", len(objects))
-
 attack_patterns = [o for o in objects if o.get("type") == "attack-pattern"]
-relationships = [o for o in objects if o.get("type") == "relationship"]
+relationships  = [o for o in objects if o.get("type") == "relationship"]
 intrusion_sets = [o for o in objects if o.get("type") == "intrusion-set"]
-malware_objs = [o for o in objects if o.get("type") == "malware"]
-campaign_objs = [o for o in objects if o.get("type") == "campaign"]
-tools = [o for o in objects if o.get("type") == "tool"]
-mitigations = [o for o in objects if o.get("type") == "course-of-action"]
-tactics = [o for o in objects if o.get("type") == "x-mitre-tactic"]
+malware_objs   = [o for o in objects if o.get("type") == "malware"]
+campaign_objs  = [o for o in objects if o.get("type") == "campaign"]
+tools          = [o for o in objects if o.get("type") == "tool"]
+mitigations    = [o for o in objects if o.get("type") == "course-of-action"]
+tactics        = [o for o in objects if o.get("type") == "x-mitre-tactic"]
 
-print("\n=== ATT&CK Object Counts ===")
+print("\n=== ATT&CK Object Counts (all domains) ===")
 print("Techniques (attack-pattern):", len(attack_patterns))
 print("Relationships:", len(relationships))
 print("Groups (intrusion-set):", len(intrusion_sets))
@@ -85,7 +99,8 @@ for obj in attack_patterns:
         "description": obj.get("description"),
         "is_subtechnique": obj.get("x_mitre_is_subtechnique", False),
         "domains": obj.get("x_mitre_domains", []),
-        "kill_chain_phases": obj.get("kill_chain_phases", [])
+        "kill_chain_phases": obj.get("kill_chain_phases", []),
+        "platforms": obj.get("x_mitre_platforms", [])
     }
 
     technique_records.append(record)
