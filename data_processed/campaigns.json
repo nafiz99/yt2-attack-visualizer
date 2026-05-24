@@ -19,6 +19,7 @@
       {
         "stix_id": "attack-pattern--01a5a209-b94c-450b-b7f9-946497d91055",
         "attack_id": "T1047",
+        
         "name": "Windows Management Instrumentation"
       },
       {
