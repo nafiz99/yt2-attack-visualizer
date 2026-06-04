@@ -2,8 +2,6 @@
 
 Static browser app for exploring MITRE ATT&CK tactics, techniques, groups, malware, campaigns, and procedure relationships.
 
-Public site: https://nafiz99.github.io/yt2-attack-visualizer/
-
 ## Local Preview
 
 Serve the `frontend` folder with any static file server listening on port `5500`, then open the application at:
@@ -41,5 +39,3 @@ To enable it on GitHub:
 5. After the workflow completes, open the Pages URL shown in the workflow summary.
 
 The workflow runs `npm test`, uploads `frontend` as the Pages artifact, and deploys it with GitHub's official Pages deployment actions.
-
-If the repository is still configured to serve Pages from a branch root instead of GitHub Actions, the root `index.html` redirects visitors to `frontend/` so the same public URL continues to work while Pages settings are being migrated.
