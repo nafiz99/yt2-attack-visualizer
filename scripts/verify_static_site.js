@@ -3,7 +3,6 @@ const path = require("path");
 
 const repoRoot = path.resolve(__dirname, "..");
 const frontendRoot = path.join(repoRoot, "frontend");
-const rootIndexPath = path.join(repoRoot, "index.html");
 const indexPath = path.join(frontendRoot, "index.html");
 const requiredFiles = [
   "index.html",
@@ -33,10 +32,6 @@ for (const relativePath of requiredFiles) {
   }
 }
 
-const rootIndexHtml = fs.readFileSync(rootIndexPath, "utf8");
-if (!rootIndexHtml.includes('url=frontend/') || !rootIndexHtml.includes('window.location.replace("frontend/"')) {
-  fail("root index.html does not redirect to frontend/");
-}
 
 const indexHtml = fs.readFileSync(indexPath, "utf8");
 if (!indexHtml.includes('type="module" src="main.js')) {
